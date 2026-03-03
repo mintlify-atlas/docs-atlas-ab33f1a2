@@ -1,0 +1,177 @@
+---
+title: User
+description: Manage user account details and settings
+---
+
+The User API allows you to retrieve and update the current user's profile information, manage tokens, view audit logs, and access billing and organization details.
+
+## Get user details
+
+Retrieve details about the current user.
+
+```typescript
+const user = await client.user.get();
+console.log(user.first_name, user.last_name);
+```
+
+<ResponseField name="id" type="string">
+  Identifier of the user
+</ResponseField>
+
+<ResponseField name="first_name" type="string | null">
+  User's first name
+</ResponseField>
+
+<ResponseField name="last_name" type="string | null">
+  User's last name
+</ResponseField>
+
+<ResponseField name="country" type="string | null">
+  The country in which the user lives
+</ResponseField>
+
+<ResponseField name="zipcode" type="string | null">
+  The zipcode or postal code where the user lives
+</ResponseField>
+
+<ResponseField name="telephone" type="string | null">
+  User's telephone number
+</ResponseField>
+
+<ResponseField name="two_factor_authentication_enabled" type="boolean">
+  Indicates whether two-factor authentication is enabled for the user account (does not apply to API authentication)
+</ResponseField>
+
+<ResponseField name="two_factor_authentication_locked" type="boolean">
+  Indicates whether two-factor authentication is required by one of the accounts the user is a member of
+</ResponseField>
+
+<ResponseField name="has_pro_zones" type="boolean">
+  Indicates whether user has any pro zones
+</ResponseField>
+
+<ResponseField name="has_business_zones" type="boolean">
+  Indicates whether user has any business zones
+</ResponseField>
+
+<ResponseField name="has_enterprise_zones" type="boolean">
+  Indicates whether user has any enterprise zones
+</ResponseField>
+
+<ResponseField name="suspended" type="boolean">
+  Indicates whether user has been suspended
+</ResponseField>
+
+<ResponseField name="betas" type="string[]">
+  Lists the betas that the user is participating in
+</ResponseField>
+
+<ResponseField name="organizations" type="object[]">
+  Organizations the user belongs to
+</ResponseField>
+
+## Update user details
+
+Edit part of the user's details.
+
+```typescript
+const response = await client.user.edit({
+  first_name: 'Jane',
+  last_name: 'Doe',
+  telephone: '+1-555-1234',
+  country: 'US',
+  zipcode: '94107'
+});
+```
+
+<ParamField body="first_name" type="string | null">
+  User's first name
+</ParamField>
+
+<ParamField body="last_name" type="string | null">
+  User's last name
+</ParamField>
+
+<ParamField body="telephone" type="string | null">
+  User's telephone number
+</ParamField>
+
+<ParamField body="country" type="string | null">
+  The country in which the user lives
+</ParamField>
+
+<ParamField body="zipcode" type="string | null">
+  The zipcode or postal code where the user lives
+</ParamField>
+
+## Sub-resources
+
+The User resource provides access to several sub-resources:
+
+### Audit logs
+
+Access user-level audit logs:
+
+```typescript
+for await (const log of client.user.auditLogs.list()) {
+  console.log(log.action, log.when);
+}
+```
+
+### Billing
+
+Access user billing information:
+
+```typescript
+const profile = await client.user.billing.profiles.get({
+  account_id: 'account-id'
+});
+```
+
+### Invites
+
+Manage user invitations:
+
+```typescript
+for await (const invite of client.user.invites.list()) {
+  console.log(invite.status);
+}
+```
+
+### Organizations
+
+Access user organizations:
+
+```typescript
+for await (const org of client.user.organizations.list()) {
+  console.log(org.name);
+}
+```
+
+### Tokens
+
+Manage API tokens:
+
+```typescript
+const token = await client.user.tokens.create({
+  name: 'My API Token',
+  policies: [{
+    effect: 'allow',
+    resources: { '*': '*' },
+    permission_groups: [{
+      id: 'token_permissions_read'
+    }]
+  }]
+});
+```
+
+### Subscriptions
+
+Manage user subscriptions:
+
+```typescript
+const subscription = await client.user.subscriptions.update(
+  'subscription-id',
+  { /* subscription params */ }
+);
+```

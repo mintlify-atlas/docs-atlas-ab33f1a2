@@ -1,0 +1,210 @@
+---
+title: Accounts
+description: Manage Cloudflare accounts, members, roles, and subscriptions
+---
+
+The Accounts resource provides methods to manage Cloudflare accounts, their members, roles, subscriptions, and API tokens.
+
+## Main methods
+
+### create
+
+Create a new account (available for tenant admins).
+
+```typescript
+const account = await client.accounts.create({
+  name: 'My New Account',
+  type: 'standard'
+});
+```
+
+<ParamField path="name" type="string" required>
+  Account name
+</ParamField>
+
+<ParamField path="type" type="'standard' | 'enterprise'">
+  Account type (defaults to 'standard')
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Account identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Account name
+</ResponseField>
+
+<ResponseField name="type" type="'standard' | 'enterprise'">
+  Account type
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  Timestamp for the creation of the account
+</ResponseField>
+
+### update
+
+Update an existing account.
+
+```typescript
+const account = await client.accounts.update({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'Updated Account Name',
+  type: 'standard'
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier tag
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Account name
+</ParamField>
+
+<ParamField path="type" type="'standard' | 'enterprise'" required>
+  Account type
+</ParamField>
+
+<ParamField path="settings" type="object">
+  Account settings
+  
+  <ParamField path="settings.abuse_contact_email" type="string">
+    Email to notify for abuse reports
+  </ParamField>
+  
+  <ParamField path="settings.enforce_twofactor" type="boolean">
+    Whether Two-Factor Authentication is required for account members
+  </ParamField>
+</ParamField>
+
+### list
+
+List all accounts you have ownership or verified access to.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const account of client.accounts.list()) {
+  console.log(account.name);
+}
+```
+
+<ParamField path="direction" type="'asc' | 'desc'">
+  Direction to order results
+</ParamField>
+
+<ParamField path="name" type="string">
+  Filter by account name
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number of paginated results
+</ParamField>
+
+<ParamField path="per_page" type="number">
+  Number of items per page (max 50)
+</ParamField>
+
+### delete
+
+Delete a specific account (available for tenant admins). This is a permanent operation that will delete any zones or other resources under the account.
+
+```typescript
+const result = await client.accounts.delete({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  The account ID to delete
+</ParamField>
+
+### get
+
+Get information about a specific account that you are a member of.
+
+```typescript
+const account = await client.accounts.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier tag
+</ParamField>
+
+## Account type
+
+```typescript
+interface Account {
+  id: string;
+  name: string;
+  type: 'standard' | 'enterprise';
+  created_on?: string;
+  managed_by?: {
+    parent_org_id?: string;
+    parent_org_name?: string;
+  };
+  settings?: {
+    abuse_contact_email?: string;
+    enforce_twofactor?: boolean;
+  };
+}
+```
+
+## Sub-resources
+
+The Accounts resource provides access to several sub-resources:
+
+- **members** - Manage account members and their roles
+- **roles** - List available roles for an account
+- **subscriptions** - Manage account subscriptions
+- **tokens** - Manage API tokens for an account
+- **logs** - Access account audit logs
+
+## Example usage
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN
+});
+
+// Create a new account
+const newAccount = await client.accounts.create({
+  name: 'My Company Account',
+  type: 'standard'
+});
+
+// List all accounts
+const accounts = await client.accounts.list();
+
+// Get specific account details
+const account = await client.accounts.get({
+  account_id: newAccount.id
+});
+
+// Update account settings
+const updatedAccount = await client.accounts.update({
+  account_id: account.id,
+  id: account.id,
+  name: account.name,
+  type: account.type,
+  settings: {
+    enforce_twofactor: true
+  }
+});
+
+// Add a member to the account
+const member = await client.accounts.members.create({
+  account_id: account.id,
+  email: 'user@example.com',
+  roles: ['Administrator']
+});
+```

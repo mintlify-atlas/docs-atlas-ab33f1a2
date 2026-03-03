@@ -1,0 +1,319 @@
+---
+title: Page rules
+description: Create and manage Page Rules to customize Cloudflare settings for specific URL patterns
+---
+
+Page Rules allow you to customize Cloudflare settings for specific URL patterns in your zone. You can override various settings and behaviors based on the URL of the request.
+
+## Create a page rule
+
+Creates a new Page Rule for a zone.
+
+```typescript
+const pageRule = await client.pageRules.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  actions: [{ id: 'browser_check' }],
+  targets: [
+    {
+      constraint: {
+        operator: 'matches',
+        value: '*example.com/images/*',
+      },
+      target: 'url',
+    },
+  ],
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="actions" type="array" required>
+  The set of actions to perform if the targets of this rule match the request. Actions can redirect to another URL or override settings, but not both.
+</ParamField>
+
+<ParamField path="targets" type="array" required>
+  The rule targets to evaluate on each request.
+  
+  <ParamField path="constraint" type="object">
+    String constraint for URL matching
+    
+    <ParamField path="operator" type="string" required>
+      The matching operator: `matches`, `contains`, `equals`, `not_equal`, or `not_contain`
+    </ParamField>
+    
+    <ParamField path="value" type="string" required>
+      The URL pattern to match. The pattern may contain up to four asterisks (*) as placeholders.
+    </ParamField>
+  </ParamField>
+  
+  <ParamField path="target" type="string">
+    Set to `url` for URL-based targeting
+  </ParamField>
+</ParamField>
+
+<ParamField path="priority" type="number">
+  The priority of the rule. A higher number indicates higher priority. Used when multiple Page Rules could match the same URL.
+</ParamField>
+
+<ParamField path="status" type="string">
+  The status of the Page Rule: `active` or `disabled`
+</ParamField>
+
+### Available actions
+
+Page Rules support numerous actions to customize behavior:
+
+**Cache settings:**
+- `browser_cache_ttl` - Set browser cache TTL
+- `cache_level` - Set cache level (bypass, basic, simplified, aggressive, cache_everything)
+- `edge_cache_ttl` - Set edge cache TTL
+- `cache_by_device_type` - Cache based on device type
+- `cache_deception_armor` - Protect from cache deception attacks
+- `cache_key_fields` - Control cache key variables
+- `cache_on_cookie` - Cache based on cookie match
+- `cache_ttl_by_status` - Set TTL by response status code
+- `bypass_cache_on_cookie` - Bypass cache if cookie matches
+- `explicit_cache_control` - Origin cache control
+
+**Security settings:**
+- `browser_check` - Enable browser integrity check
+- `email_obfuscation` - Obfuscate email addresses
+- `ip_geolocation` - Add IP geolocation headers
+- `security_level` - Set security level
+- `waf` - Enable/disable WAF
+- `disable_security` - Turn off security features
+
+**Performance settings:**
+- `automatic_https_rewrites` - Rewrite HTTP to HTTPS
+- `mirage` - Enable Mirage image optimization
+- `polish` - Enable Polish image compression
+- `rocket_loader` - Enable Rocket Loader
+- `disable_performance` - Turn off performance features
+
+**Network settings:**
+- `always_use_https` - Redirect HTTP to HTTPS
+- `ssl` - Set SSL mode
+- `opportunistic_encryption` - Enable opportunistic encryption
+
+**Redirects and overrides:**
+- `forwarding_url` - Redirect to another URL
+- `host_header_override` - Override host header
+- `resolve_override` - Override origin address
+
+**Other:**
+- `disable_apps` - Turn off Cloudflare Apps
+- `disable_zaraz` - Turn off Zaraz
+- `origin_error_page_pass_thru` - Pass through origin error pages
+- `response_buffering` - Enable response buffering
+- `respect_strong_etag` - Respect strong ETags
+- `sort_query_string_for_cache` - Sort query strings
+- `true_client_ip_header` - Add True-Client-IP header
+
+<ResponseField name="id" type="string">
+  The Page Rule identifier
+</ResponseField>
+
+<ResponseField name="actions" type="array">
+  The configured actions for this rule
+</ResponseField>
+
+<ResponseField name="targets" type="array">
+  The URL targets for this rule
+</ResponseField>
+
+<ResponseField name="priority" type="number">
+  The rule priority
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  The rule status (active or disabled)
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  Timestamp when the rule was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  Timestamp when the rule was last modified
+</ResponseField>
+
+## Update a page rule
+
+Replaces the configuration of an existing Page Rule. The configuration will exactly match the data provided.
+
+```typescript
+const pageRule = await client.pageRules.update(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    actions: [{ id: 'browser_check' }],
+    targets: [
+      {
+        constraint: {
+          operator: 'matches',
+          value: '*example.com/images/*',
+        },
+        target: 'url',
+      },
+    ],
+  },
+);
+```
+
+<ParamField path="pageruleId" type="string" required>
+  The Page Rule identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## List page rules
+
+Fetches all Page Rules in a zone.
+
+```typescript
+const pageRules = await client.pageRules.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="status" type="string">
+  Filter by status: `active` or `disabled`
+</ParamField>
+
+<ParamField path="order" type="string">
+  Field to sort by: `status` or `priority`
+</ParamField>
+
+<ParamField path="direction" type="string">
+  Sort direction: `asc` or `desc`
+</ParamField>
+
+<ParamField path="match" type="string">
+  Match mode: `any` or `all` (when using multiple filters)
+</ParamField>
+
+## Get a page rule
+
+Fetches details of a single Page Rule.
+
+```typescript
+const pageRule = await client.pageRules.get(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="pageruleId" type="string" required>
+  The Page Rule identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Edit a page rule
+
+Updates one or more fields of an existing Page Rule.
+
+```typescript
+const pageRule = await client.pageRules.edit(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  { 
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    status: 'disabled',
+  },
+);
+```
+
+<ParamField path="pageruleId" type="string" required>
+  The Page Rule identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Delete a page rule
+
+Deletes an existing Page Rule.
+
+```typescript
+await client.pageRules.delete(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="pageruleId" type="string" required>
+  The Page Rule identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Example: Set cache TTL and browser check
+
+```typescript
+const pageRule = await client.pageRules.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  actions: [
+    {
+      id: 'edge_cache_ttl',
+      value: 7200, // 2 hours
+    },
+    {
+      id: 'browser_cache_ttl',
+      value: 3600, // 1 hour
+    },
+    {
+      id: 'browser_check',
+    },
+  ],
+  targets: [
+    {
+      constraint: {
+        operator: 'matches',
+        value: '*example.com/static/*',
+      },
+      target: 'url',
+    },
+  ],
+  status: 'active',
+  priority: 1,
+});
+```
+
+## Example: URL forwarding
+
+```typescript
+const pageRule = await client.pageRules.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  actions: [
+    {
+      id: 'forwarding_url',
+      value: {
+        status_code: 301,
+        url: 'https://newdomain.com/$1',
+      },
+    },
+  ],
+  targets: [
+    {
+      constraint: {
+        operator: 'matches',
+        value: 'olddomain.com/*',
+      },
+      target: 'url',
+    },
+  ],
+});
+```

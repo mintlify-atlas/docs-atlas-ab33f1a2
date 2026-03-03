@@ -1,0 +1,149 @@
+---
+title: 'Logs'
+description: 'API reference for Cloudflare Logs (real-time log access)'
+---
+
+## Overview
+
+The Logs API provides access to HTTP request logs and other event data in real-time. Query logs by Ray ID, retrieve received logs, and manage log retention controls.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Ray ID
+
+Lookup logs by Ray ID.
+
+### Get log by Ray ID
+
+Retrieve logs for a specific Ray ID.
+
+```typescript
+const log = await client.logs.RayID.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  ray_id: 'abc123def456',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="ray_id" type="string" required>
+  The Ray ID to look up (found in Cloudflare error pages and headers)
+</ParamField>
+
+<ResponseField name="rayId" type="string">
+  The Ray ID
+</ResponseField>
+
+<ResponseField name="timestamp" type="string">
+  Request timestamp
+</ResponseField>
+
+<ResponseField name="clientIP" type="string">
+  Client IP address
+</ResponseField>
+
+<ResponseField name="request" type="object">
+  Request details
+</ResponseField>
+
+<ResponseField name="response" type="object">
+  Response details
+</ResponseField>
+
+Ray IDs are unique identifiers assigned to every request processed by Cloudflare. They're useful for debugging specific requests and troubleshooting issues.
+
+## Received
+
+Access received HTTP request logs.
+
+### Get received logs
+
+Retrieve a stream of HTTP request logs.
+
+```typescript
+const logs = await client.logs.received.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  start: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+  end: Math.floor(Date.now() / 1000),
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="start" type="number">
+  Start timestamp (Unix timestamp in seconds)
+</ParamField>
+
+<ParamField path="end" type="number">
+  End timestamp (Unix timestamp in seconds)
+</ParamField>
+
+<ParamField path="fields" type="string">
+  Comma-separated list of fields to include (e.g., `ClientIP,EdgeStartTimestamp,RayID`)
+</ParamField>
+
+<ParamField path="sample" type="number">
+  Sampling rate (0.01 = 1% of logs)
+</ParamField>
+
+<ParamField path="timestamps" type="'unix' | 'unixnano' | 'rfc3339'">
+  Timestamp format
+</ParamField>
+
+<ResponseField name="logs" type="array">
+  Array of log entries matching the query
+</ResponseField>
+
+Received logs provide detailed information about HTTP requests processed by Cloudflare, including client information, request/response details, performance metrics, and security events.
+
+## Control
+
+Manage log retention and control settings.
+
+```typescript
+const control = client.logs.control;
+```
+
+The control resource provides methods for managing log retention policies and access controls.
+
+## Use cases
+
+The Logs API is useful for:
+
+- **Debugging**: Look up specific requests using Ray IDs
+- **Analytics**: Analyze traffic patterns and performance metrics
+- **Security**: Investigate suspicious requests and attacks
+- **Compliance**: Export logs for audit and compliance requirements
+- **Monitoring**: Build custom dashboards and alerting systems
+
+## Available log fields
+
+Common fields available in request logs:
+
+- **ClientIP** - Client IP address
+- **ClientRequestHost** - Host header from the request
+- **ClientRequestMethod** - HTTP method (GET, POST, etc.)
+- **ClientRequestURI** - Request URI
+- **EdgeStartTimestamp** - Unix nanosecond timestamp
+- **EdgeEndTimestamp** - Unix nanosecond timestamp
+- **RayID** - Unique request identifier
+- **EdgeResponseStatus** - HTTP status code
+- **CacheResponseStatus** - Cache status (hit, miss, etc.)
+- **SecurityLevel** - Security level applied
+- **WAFAction** - WAF action taken
+- **WAFFlags** - WAF rule flags
+- **WAFMatchedVar** - WAF matched variable
+
+See the Cloudflare documentation for a complete list of available fields.

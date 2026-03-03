@@ -1,0 +1,440 @@
+---
+title: R2 Storage
+description: Store objects with Cloudflare R2
+---
+
+Cloudflare R2 is an S3-compatible object storage service with zero egress fees. Use the API to manage buckets and configure storage settings.
+
+## Overview
+
+Access the R2 API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access R2 resources
+const r2 = client.r2;
+```
+
+## Buckets
+
+Manage R2 storage buckets.
+
+### Create a bucket
+
+Create a new R2 bucket.
+
+```typescript
+const bucket = await client.r2.buckets.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'my-bucket',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Bucket name (3-63 characters, lowercase, alphanumeric, and hyphens)
+</ParamField>
+
+<ParamField path="jurisdiction" type="string">
+  Data jurisdiction for the bucket (e.g., 'eu' for EU data residency)
+</ParamField>
+
+<ParamField path="storage_class" type="string">
+  Storage class: 'Standard' or 'InfrequentAccess'
+</ParamField>
+
+<ResponseField name="name" type="string">
+  The bucket name
+</ResponseField>
+
+<ResponseField name="creation_date" type="string">
+  ISO 8601 timestamp when the bucket was created
+</ResponseField>
+
+<ResponseField name="location" type="string">
+  The bucket's location/jurisdiction
+</ResponseField>
+
+### List buckets
+
+Retrieve all R2 buckets in your account.
+
+```typescript
+const buckets = await client.r2.buckets.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="jurisdiction" type="string">
+  Filter buckets by jurisdiction
+</ParamField>
+
+<ParamField path="cursor" type="string">
+  Pagination cursor
+</ParamField>
+
+<ParamField path="per_page" type="number">
+  Number of buckets per page (default: 1000, max: 1000)
+</ParamField>
+
+<ResponseField name="buckets" type="array">
+  Array of bucket objects
+</ResponseField>
+
+### Get a bucket
+
+Retrieve details about a specific bucket.
+
+```typescript
+const bucket = await client.r2.buckets.get(
+  'my-bucket',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="bucket_name" type="string" required>
+  The bucket name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Update a bucket
+
+Update bucket configuration.
+
+```typescript
+const bucket = await client.r2.buckets.edit(
+  'my-bucket',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    storage_class: 'InfrequentAccess',
+  }
+);
+```
+
+<ParamField path="bucket_name" type="string" required>
+  The bucket name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="storage_class" type="string">
+  Storage class: 'Standard' or 'InfrequentAccess'
+</ParamField>
+
+### Delete a bucket
+
+Delete an R2 bucket. The bucket must be empty.
+
+```typescript
+await client.r2.buckets.delete(
+  'my-bucket',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="bucket_name" type="string" required>
+  The bucket name to delete
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+## CORS
+
+Manage Cross-Origin Resource Sharing (CORS) policies.
+
+### Get CORS configuration
+
+Retrieve the CORS configuration for a bucket.
+
+```typescript
+const cors = await client.r2.buckets.cors.get(
+  'my-bucket',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Update CORS configuration
+
+Set CORS rules for a bucket.
+
+```typescript
+const cors = await client.r2.buckets.cors.update(
+  'my-bucket',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    rules: [
+      {
+        allowed_origins: ['https://example.com'],
+        allowed_methods: ['GET', 'PUT'],
+        allowed_headers: ['*'],
+        max_age_seconds: 3600,
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="rules" type="array" required>
+  Array of CORS rule objects
+</ParamField>
+
+<ParamField path="rules.allowed_origins" type="array" required>
+  Array of allowed origin URLs
+</ParamField>
+
+<ParamField path="rules.allowed_methods" type="array" required>
+  Array of allowed HTTP methods
+</ParamField>
+
+<ParamField path="rules.allowed_headers" type="array">
+  Array of allowed headers (use ['*'] for all headers)
+</ParamField>
+
+<ParamField path="rules.max_age_seconds" type="number">
+  Cache duration for preflight requests in seconds
+</ParamField>
+
+### Delete CORS configuration
+
+Remove CORS configuration from a bucket.
+
+```typescript
+await client.r2.buckets.cors.delete(
+  'my-bucket',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Lifecycle policies
+
+Manage object lifecycle rules.
+
+### Get lifecycle configuration
+
+```typescript
+const lifecycle = await client.r2.buckets.lifecycle.get(
+  'my-bucket',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Update lifecycle configuration
+
+Set lifecycle rules to automatically delete or transition objects.
+
+```typescript
+const lifecycle = await client.r2.buckets.lifecycle.update(
+  'my-bucket',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    rules: [
+      {
+        id: 'delete-old-logs',
+        status: 'Enabled',
+        prefix: 'logs/',
+        expiration: {
+          days: 30,
+        },
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="rules" type="array" required>
+  Array of lifecycle rule objects
+</ParamField>
+
+<ParamField path="rules.id" type="string" required>
+  Unique identifier for the rule
+</ParamField>
+
+<ParamField path="rules.status" type="string" required>
+  Rule status: 'Enabled' or 'Disabled'
+</ParamField>
+
+<ParamField path="rules.prefix" type="string">
+  Object key prefix to match
+</ParamField>
+
+<ParamField path="rules.expiration" type="object">
+  Expiration settings
+</ParamField>
+
+<ParamField path="rules.expiration.days" type="number">
+  Number of days after which objects expire
+</ParamField>
+
+## Event notifications
+
+Configure event notifications to trigger Workers or send to queues.
+
+### Get event notifications
+
+```typescript
+const notifications = await client.r2.buckets.eventNotifications.get(
+  'my-bucket',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Update event notifications
+
+```typescript
+const notifications = await client.r2.buckets.eventNotifications.update(
+  'my-bucket',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    rules: [
+      {
+        prefix: 'uploads/',
+        suffix: '.jpg',
+        actions: ['PutObject'],
+        queue_id: 'queue-id',
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="rules" type="array" required>
+  Array of event notification rules
+</ParamField>
+
+<ParamField path="rules.actions" type="array" required>
+  Array of S3 event types (e.g., 'PutObject', 'DeleteObject')
+</ParamField>
+
+<ParamField path="rules.queue_id" type="string">
+  Cloudflare Queue ID to send notifications to
+</ParamField>
+
+<ParamField path="rules.prefix" type="string">
+  Object key prefix filter
+</ParamField>
+
+<ParamField path="rules.suffix" type="string">
+  Object key suffix filter
+</ParamField>
+
+## Temporary credentials
+
+Generate temporary S3-compatible credentials for bucket access.
+
+### Create temporary credentials
+
+```typescript
+const credentials = await client.r2.temporaryCredentials.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  bucket_name: 'my-bucket',
+  permissions: ['read', 'write'],
+  ttl_seconds: 3600,
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="bucket_name" type="string" required>
+  The bucket name
+</ParamField>
+
+<ParamField path="permissions" type="array" required>
+  Array of permissions: 'read', 'write', or 'delete'
+</ParamField>
+
+<ParamField path="ttl_seconds" type="number">
+  Time-to-live in seconds (default: 3600, max: 43200)
+</ParamField>
+
+<ResponseField name="access_key_id" type="string">
+  S3-compatible access key ID
+</ResponseField>
+
+<ResponseField name="secret_access_key" type="string">
+  S3-compatible secret access key
+</ResponseField>
+
+<ResponseField name="session_token" type="string">
+  Session token for temporary credentials
+</ResponseField>
+
+<ResponseField name="expiration" type="string">
+  ISO 8601 timestamp when credentials expire
+</ResponseField>
+
+## Using R2 in Workers
+
+Bind an R2 bucket to your Worker:
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    bindings: [
+      {
+        type: 'r2_bucket',
+        name: 'BUCKET',
+        bucket_name: 'my-bucket',
+      },
+    ],
+    modules: [...],
+  }
+);
+```
+
+Then access R2 from your Worker:
+
+```typescript
+export default {
+  async fetch(request, env) {
+    // Put an object
+    await env.BUCKET.put('key', 'value');
+    
+    // Get an object
+    const object = await env.BUCKET.get('key');
+    const text = await object.text();
+    
+    // List objects
+    const list = await env.BUCKET.list();
+    
+    return new Response(text);
+  },
+};
+```
+
+## Super Slurper
+
+Migrate data from other cloud providers to R2.
+
+### Get Super Slurper configuration
+
+```typescript
+const config = await client.r2.superSlurper.get(
+  'my-bucket',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```

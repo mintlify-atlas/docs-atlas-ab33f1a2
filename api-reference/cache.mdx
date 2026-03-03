@@ -1,0 +1,238 @@
+---
+title: Cache
+description: Manage Cloudflare cache settings and purge cached content
+---
+
+The Cache API allows you to purge cached content and manage cache settings including cache reserve, tiered cache, and variants.
+
+## Purge cache
+
+Purge cached content from Cloudflare's cache. You can purge everything, specific URLs, files with custom cache keys, or content by tags, hostnames, or prefixes.
+
+### Purge everything
+
+Removes all files from Cloudflare's cache.
+
+```typescript
+const response = await client.cache.purge({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  purge_everything: true,
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="purge_everything" type="boolean" required>
+  Set to true to purge all cached content
+</ParamField>
+
+### Purge by URL
+
+Granularly removes one or more files from Cloudflare's cache by specifying URLs.
+
+```typescript
+const response = await client.cache.purge({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  files: [
+    'http://www.example.com/css/styles.css',
+    'http://www.example.com/js/index.js',
+  ],
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="files" type="array" required>
+  An array of URLs to purge from cache
+</ParamField>
+
+### Purge with custom cache keys
+
+Purge files with custom cache keys by including headers used to compute the cache key.
+
+```typescript
+const response = await client.cache.purge({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  files: [
+    {
+      url: 'http://www.example.com/cat_picture.jpg',
+      headers: {
+        'CF-IPCountry': 'US',
+        'CF-Device-Type': 'desktop',
+        'Accept-Language': 'zh-CN',
+      },
+    },
+    {
+      url: 'http://www.example.com/dog_picture.jpg',
+      headers: {
+        'CF-IPCountry': 'EU',
+        'CF-Device-Type': 'mobile',
+        'Accept-Language': 'en-US',
+      },
+    },
+  ],
+});
+```
+
+<ParamField path="files" type="array" required>
+  An array of objects containing URL and headers for cache key matching
+  
+  <ParamField path="url" type="string">
+    The URL to purge
+  </ParamField>
+  
+  <ParamField path="headers" type="object">
+    Headers used to compute the cache key (CF-Device-Type, CF-IPCountry, Accept-Language, etc.)
+  </ParamField>
+</ParamField>
+
+### Purge by cache tags
+
+Granularly removes files by specifying associated cache tags.
+
+```typescript
+const response = await client.cache.purge({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  tags: ['a-cache-tag', 'another-cache-tag'],
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="tags" type="array" required>
+  An array of cache tags to purge
+</ParamField>
+
+### Purge by hostname
+
+Purge all cached content for specified hostnames.
+
+```typescript
+const response = await client.cache.purge({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  hosts: ['www.example.com', 'images.example.com'],
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="hosts" type="array" required>
+  An array of hostnames to purge
+</ParamField>
+
+### Purge by prefix
+
+Purge cached content by URL prefix.
+
+```typescript
+const response = await client.cache.purge({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  prefixes: ['www.example.com/foo', 'images.example.com/bar/baz'],
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="prefixes" type="array" required>
+  An array of URL prefixes to purge
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The purge operation identifier
+</ResponseField>
+
+## Cache reserve
+
+Manage Cache Reserve settings to store cached assets in Cloudflare's persistent storage.
+
+```typescript
+// Get Cache Reserve status
+const status = await client.cache.cacheReserve.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Enable Cache Reserve
+const response = await client.cache.cacheReserve.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  value: 'on',
+});
+
+// Clear Cache Reserve
+await client.cache.cacheReserve.clear({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+## Smart tiered cache
+
+Configure Smart Tiered Cache to optimize cache topology.
+
+```typescript
+// Get Smart Tiered Cache settings
+const settings = await client.cache.smartTieredCache.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Enable Smart Tiered Cache
+const response = await client.cache.smartTieredCache.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  value: 'on',
+});
+
+// Disable Smart Tiered Cache
+await client.cache.smartTieredCache.delete({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+## Regional tiered cache
+
+Manage Regional Tiered Cache to improve cache hit ratios.
+
+```typescript
+// Get regional tiered cache settings
+const settings = await client.cache.regionalTieredCache.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Configure regional tiered cache
+const response = await client.cache.regionalTieredCache.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  value: 'on',
+});
+```
+
+## Cache variants
+
+Manage cache variants to serve different versions of cached content based on image format or content encoding.
+
+```typescript
+// Get cache variants configuration
+const variants = await client.cache.variants.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Configure cache variants
+const response = await client.cache.variants.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  value: {
+    avif: ['image/avif', 'image/webp'],
+    webp: ['image/webp'],
+  },
+});
+
+// Delete cache variants configuration
+await client.cache.variants.delete({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```

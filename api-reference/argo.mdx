@@ -1,0 +1,132 @@
+---
+title: 'Argo'
+description: 'API reference for Cloudflare Argo (Smart Routing and Tiered Caching)'
+---
+
+## Overview
+
+Argo improves web application performance and reliability. Argo Smart Routing optimizes routing paths across the Internet, while Argo Tiered Caching reduces requests to your origin server.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Smart Routing
+
+Manage Argo Smart Routing settings.
+
+### Get Smart Routing settings
+
+Retrieve the current Smart Routing configuration.
+
+```typescript
+const settings = await client.argo.smartRouting.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Identifier for the Smart Routing setting
+</ResponseField>
+
+<ResponseField name="value" type="string">
+  Current value of the setting
+</ResponseField>
+
+<ResponseField name="editable" type="boolean">
+  Whether the setting can be modified
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  When the setting was last modified
+</ResponseField>
+
+### Edit Smart Routing settings
+
+Update Smart Routing configuration.
+
+```typescript
+const settings = await client.argo.smartRouting.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  value: 'on',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="value" type="string" required>
+  The new value for Smart Routing (e.g., 'on' or 'off')
+</ParamField>
+
+## Tiered Caching
+
+Manage Argo Tiered Caching settings.
+
+### Get Tiered Caching settings
+
+Retrieve the current Tiered Caching configuration.
+
+```typescript
+const settings = await client.argo.tieredCaching.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Identifier for the Tiered Caching setting
+</ResponseField>
+
+<ResponseField name="value" type="string">
+  Current value of the setting
+</ResponseField>
+
+<ResponseField name="editable" type="boolean">
+  Whether the setting can be modified
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  When the setting was last modified
+</ResponseField>
+
+### Edit Tiered Caching settings
+
+Update Tiered Caching configuration.
+
+```typescript
+const settings = await client.argo.tieredCaching.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  value: 'on',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="value" type="string" required>
+  The new value for Tiered Caching (e.g., 'on' or 'off')
+</ParamField>
+
+## What is Argo Smart Routing?
+
+Argo Smart Routing analyzes network intelligence to find the fastest and most reliable paths across the Internet for your traffic. It routes requests through Cloudflare's private network backbone, avoiding congestion and improving performance.
+
+## What is Argo Tiered Caching?
+
+Argo Tiered Caching creates a hierarchy of caches between edge data centers and your origin server. This reduces load on your origin by serving cached content from Cloudflare's network, improving cache hit ratios and reducing bandwidth costs.

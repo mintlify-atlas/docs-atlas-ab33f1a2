@@ -1,0 +1,298 @@
+---
+title: Security Center
+description: Centralized security insights and recommendations for your infrastructure
+---
+
+The Security Center API provides centralized security insights, recommendations, and vulnerability assessments across your Cloudflare infrastructure.
+
+## Initialize the Security Center resource
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+const securityCenter = client.securityCenter;
+```
+
+## Insights
+
+Manage security insights and recommendations.
+
+### List insights
+
+Retrieve all security insights for your account.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const insight of client.securityCenter.insights.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(insight.type, insight.severity);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField query="dismissed" type="boolean">
+  Filter by dismissed status
+</ParamField>
+
+<ParamField query="insight_class" type="string[]">
+  Filter by insight class. Options may include:
+  - `compliance`
+  - `misconfiguration`
+  - `vulnerability`
+  - `threat`
+</ParamField>
+
+<ParamField query="insight_type" type="string[]">
+  Filter by specific insight types
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number of paginated results
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of items per page (default: 20, max: 100)
+</ParamField>
+
+<ParamField query="product" type="string[]">
+  Filter by Cloudflare product. Options may include:
+  - `access`
+  - `dns`
+  - `firewall`
+  - `ssl`
+  - `workers`
+</ParamField>
+
+<ParamField query="severity" type="string[]">
+  Filter by severity level. Options:
+  - `low`
+  - `moderate`
+  - `high`
+  - `critical`
+</ParamField>
+
+### Dismiss insight
+
+Mark a security insight as dismissed.
+
+```typescript
+const result = await client.securityCenter.insights.dismiss(
+  'insight_id',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    dismissed: true,
+  }
+);
+```
+
+<ParamField path="insight_id" type="string" required>
+  Insight identifier
+</ParamField>
+
+<ParamField body="dismissed" type="boolean" required>
+  Whether to dismiss or undismiss the insight
+</ParamField>
+
+## Use cases
+
+### Monitor security posture
+
+Get a comprehensive view of your security posture.
+
+```typescript
+const criticalInsights = [];
+const highInsights = [];
+
+for await (const insight of client.securityCenter.insights.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  dismissed: false,
+})) {
+  if (insight.severity === 'critical') {
+    criticalInsights.push(insight);
+  } else if (insight.severity === 'high') {
+    highInsights.push(insight);
+  }
+}
+
+console.log(`Critical insights: ${criticalInsights.length}`);
+console.log(`High severity insights: ${highInsights.length}`);
+```
+
+### Filter by product
+
+View security insights for a specific Cloudflare product.
+
+```typescript
+for await (const insight of client.securityCenter.insights.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  product: ['firewall', 'access'],
+  dismissed: false,
+})) {
+  console.log(`[${insight.product}] ${insight.type}: ${insight.description}`);
+}
+```
+
+### Manage compliance insights
+
+Track and manage compliance-related security insights.
+
+```typescript
+for await (const insight of client.securityCenter.insights.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  insight_class: ['compliance'],
+  dismissed: false,
+})) {
+  console.log(`Compliance issue: ${insight.type}`);
+  
+  // Review and optionally dismiss
+  if (insight.severity === 'low') {
+    await client.securityCenter.insights.dismiss(
+      insight.id,
+      {
+        account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+        dismissed: true,
+      }
+    );
+  }
+}
+```
+
+### Automated security reporting
+
+Generate automated security reports.
+
+```typescript
+interface SecurityReport {
+  total: number;
+  bySeverity: Record<string, number>;
+  byProduct: Record<string, number>;
+  dismissed: number;
+}
+
+const report: SecurityReport = {
+  total: 0,
+  bySeverity: {},
+  byProduct: {},
+  dismissed: 0,
+};
+
+for await (const insight of client.securityCenter.insights.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  report.total++;
+  
+  if (insight.dismissed) {
+    report.dismissed++;
+  }
+  
+  report.bySeverity[insight.severity] = 
+    (report.bySeverity[insight.severity] || 0) + 1;
+  
+  report.byProduct[insight.product] = 
+    (report.byProduct[insight.product] || 0) + 1;
+}
+
+console.log('Security Report:', JSON.stringify(report, null, 2));
+```
+
+## Response types
+
+### InsightListResponse
+
+Represents a security insight.
+
+<ResponseField name="id" type="string" required>
+  Insight identifier
+</ResponseField>
+
+<ResponseField name="type" type="string" required>
+  Type of security insight
+</ResponseField>
+
+<ResponseField name="severity" type="string" required>
+  Severity level: `low`, `moderate`, `high`, or `critical`
+</ResponseField>
+
+<ResponseField name="insight_class" type="string" required>
+  Classification of the insight (e.g., `compliance`, `misconfiguration`, `vulnerability`, `threat`)
+</ResponseField>
+
+<ResponseField name="product" type="string" required>
+  Cloudflare product associated with the insight
+</ResponseField>
+
+<ResponseField name="description" type="string" required>
+  Detailed description of the security insight
+</ResponseField>
+
+<ResponseField name="dismissed" type="boolean" required>
+  Whether the insight has been dismissed
+</ResponseField>
+
+<ResponseField name="detected_at" type="string" required>
+  When the insight was first detected
+</ResponseField>
+
+<ResponseField name="updated_at" type="string" required>
+  When the insight was last updated
+</ResponseField>
+
+<ResponseField name="recommendation" type="string">
+  Recommended action to address the insight
+</ResponseField>
+
+<ResponseField name="impact" type="string">
+  Potential impact if the insight is not addressed
+</ResponseField>
+
+<ResponseField name="affected_resources" type="array">
+  List of resources affected by this insight
+</ResponseField>
+
+### InsightDismissResponse
+
+Response from dismissing an insight.
+
+<ResponseField name="id" type="string" required>
+  Insight identifier
+</ResponseField>
+
+<ResponseField name="dismissed" type="boolean" required>
+  Updated dismissed status
+</ResponseField>
+
+<ResponseField name="dismissed_at" type="string">
+  When the insight was dismissed
+</ResponseField>
+
+## Best practices
+
+<Tip>
+**Prioritize by severity**: Focus on critical and high severity insights first to address the most pressing security concerns.
+</Tip>
+
+<Tip>
+**Regular reviews**: Schedule regular reviews of security insights to maintain strong security posture.
+</Tip>
+
+<Tip>
+**Product-specific monitoring**: Set up monitoring for specific products that are critical to your infrastructure.
+</Tip>
+
+<Warning>
+Dismissing insights does not fix the underlying security issues. Always review and remediate before dismissing.
+</Warning>
+
+## Related resources
+
+- [Page Shield](/api-reference/page-shield)
+- [Bot Management](/api-reference/bot-management)
+- [Leaked Credential Checks](/api-reference/leaked-credential-checks)

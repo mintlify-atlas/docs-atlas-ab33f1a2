@@ -1,0 +1,319 @@
+---
+title: Workers KV
+description: Store and retrieve key-value data globally with Workers KV
+---
+
+Workers KV is a global, low-latency key-value data store. The KV API allows you to manage namespaces, keys, and values.
+
+## Overview
+
+Access the KV API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access KV resources
+const kv = client.kv;
+```
+
+## Namespaces
+
+KV namespaces are containers for key-value pairs.
+
+### Create a namespace
+
+Create a new KV namespace.
+
+```typescript
+const namespace = await client.kv.namespaces.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  title: 'My KV Namespace',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  A human-readable name for the namespace
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The namespace ID (used for API operations)
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  The namespace title
+</ResponseField>
+
+<ResponseField name="supports_url_encoding" type="boolean">
+  Whether the namespace supports URL encoding for keys
+</ResponseField>
+
+### List namespaces
+
+Retrieve all KV namespaces in your account.
+
+```typescript
+for await (const namespace of client.kv.namespaces.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(namespace);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number for pagination
+</ParamField>
+
+<ParamField path="per_page" type="number">
+  Number of namespaces per page (default: 20, max: 100)
+</ParamField>
+
+### Update a namespace
+
+Rename a KV namespace.
+
+```typescript
+const namespace = await client.kv.namespaces.update(
+  '0f2ac74b498b48028cb68387c421e279',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    title: 'Updated Namespace Name',
+  }
+);
+```
+
+<ParamField path="namespace_id" type="string" required>
+  The namespace ID to update
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="title" type="string" required>
+  The new title for the namespace
+</ParamField>
+
+### Delete a namespace
+
+Delete a KV namespace and all its key-value pairs.
+
+```typescript
+await client.kv.namespaces.delete(
+  '0f2ac74b498b48028cb68387c421e279',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="namespace_id" type="string" required>
+  The namespace ID to delete
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+## Values
+
+Manage key-value pairs within a namespace.
+
+### Write a value
+
+Write a key-value pair to a namespace.
+
+```typescript
+await client.kv.namespaces.values.update(
+  '0f2ac74b498b48028cb68387c421e279',
+  'my-key',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    value: 'my-value',
+    metadata: { userId: '123' },
+  }
+);
+```
+
+<ParamField path="namespace_id" type="string" required>
+  The namespace ID
+</ParamField>
+
+<ParamField path="key_name" type="string" required>
+  The key name (up to 512 bytes)
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="value" type="string" required>
+  The value to store (up to 25 MB)
+</ParamField>
+
+<ParamField path="metadata" type="object">
+  Optional JSON metadata (up to 1024 bytes)
+</ParamField>
+
+<ParamField path="expiration" type="number">
+  Unix timestamp when the key should expire
+</ParamField>
+
+<ParamField path="expiration_ttl" type="number">
+  Number of seconds until the key expires
+</ParamField>
+
+### Read a value
+
+Retrieve a value from a namespace.
+
+```typescript
+const value = await client.kv.namespaces.values.get(
+  '0f2ac74b498b48028cb68387c421e279',
+  'my-key',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="namespace_id" type="string" required>
+  The namespace ID
+</ParamField>
+
+<ParamField path="key_name" type="string" required>
+  The key name to retrieve
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Delete a value
+
+Delete a key-value pair from a namespace.
+
+```typescript
+await client.kv.namespaces.values.delete(
+  '0f2ac74b498b48028cb68387c421e279',
+  'my-key',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Keys
+
+List and manage keys within a namespace.
+
+### List keys
+
+Retrieve a list of keys in a namespace.
+
+```typescript
+for await (const key of client.kv.namespaces.keys.list(
+  '0f2ac74b498b48028cb68387c421e279',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+)) {
+  console.log(key.name);
+}
+```
+
+<ParamField path="namespace_id" type="string" required>
+  The namespace ID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="prefix" type="string">
+  Filter keys by prefix
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of keys to return (default: 1000, max: 1000)
+</ParamField>
+
+<ParamField path="cursor" type="string">
+  Pagination cursor for fetching the next page
+</ParamField>
+
+## Bulk operations
+
+### Bulk write
+
+Write multiple key-value pairs in a single request.
+
+```typescript
+const response = await client.kv.namespaces.bulkUpdate(
+  '0f2ac74b498b48028cb68387c421e279',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    body: [
+      { key: 'key1', value: 'value1' },
+      { key: 'key2', value: 'value2', metadata: { tag: 'test' } },
+    ],
+  }
+);
+```
+
+<ParamField path="namespace_id" type="string" required>
+  The namespace ID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="body" type="array" required>
+  Array of key-value pairs to write (up to 10,000 pairs)
+</ParamField>
+
+### Bulk delete
+
+Delete multiple keys in a single request.
+
+```typescript
+await client.kv.namespaces.bulkDelete(
+  '0f2ac74b498b48028cb68387c421e279',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    body: ['key1', 'key2', 'key3'],
+  }
+);
+```
+
+<ParamField path="namespace_id" type="string" required>
+  The namespace ID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="body" type="array" required>
+  Array of key names to delete (up to 10,000 keys)
+</ParamField>
+
+## Metadata
+
+Retrieve metadata about a key without fetching its value.
+
+```typescript
+const metadata = await client.kv.namespaces.metadata.get(
+  '0f2ac74b498b48028cb68387c421e279',
+  'my-key',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ResponseField name="metadata" type="object">
+  The JSON metadata associated with the key
+</ResponseField>

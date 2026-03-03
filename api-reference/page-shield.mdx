@@ -1,0 +1,379 @@
+---
+title: Page Shield
+description: Client-side security monitoring for JavaScript and connections
+---
+
+The Page Shield API provides client-side security monitoring to detect and alert on malicious scripts, connections, and cookies loaded on your website. It helps protect against supply chain attacks, Magecart attacks, and other client-side threats.
+
+## Initialize the Page Shield resource
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+const pageShield = client.pageShield;
+```
+
+## Settings management
+
+### Get settings
+
+Retrieve the current Page Shield settings for a zone.
+
+```typescript
+const settings = await client.pageShield.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Update settings
+
+Update Page Shield settings for a zone.
+
+```typescript
+const settings = await client.pageShield.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  enabled: true,
+  use_cloudflare_reporting_endpoint: true,
+  use_connection_url_path: false,
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField body="enabled" type="boolean">
+  Enable or disable Page Shield
+</ParamField>
+
+<ParamField body="use_cloudflare_reporting_endpoint" type="boolean">
+  When true, CSP reports will be sent to https://csp-reporting.cloudflare.com/cdn-cgi/script_monitor/report
+</ParamField>
+
+<ParamField body="use_connection_url_path" type="boolean">
+  When true, the paths associated with connection URLs will also be analyzed
+</ParamField>
+
+## Scripts
+
+Monitor and analyze JavaScript files loaded on your website.
+
+### List scripts
+
+List all scripts detected by Page Shield.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const script of client.pageShield.scripts.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(script.url, script.host);
+}
+```
+
+<ParamField query="direction" type="string">
+  Direction to order scripts. Options: `asc`, `desc`
+</ParamField>
+
+<ParamField query="exclude_cdn_cgi" type="boolean">
+  Exclude scripts from cdn-cgi path
+</ParamField>
+
+<ParamField query="exclude_duplicates" type="boolean">
+  Exclude duplicate scripts
+</ParamField>
+
+<ParamField query="exclude_urls" type="string">
+  Comma-separated list of URL patterns to exclude
+</ParamField>
+
+<ParamField query="export" type="string">
+  Export format. Options: `csv`
+</ParamField>
+
+<ParamField query="hosts" type="string">
+  Comma-separated list of hosts to filter by
+</ParamField>
+
+<ParamField query="order_by" type="string">
+  Field to order by. Options: `first_seen_at`, `last_seen_at`
+</ParamField>
+
+<ParamField query="page" type="string">
+  Page number
+</ParamField>
+
+<ParamField query="page_url" type="string">
+  Filter by page URL where script was loaded
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of items per page
+</ParamField>
+
+<ParamField query="prioritize_malicious" type="boolean">
+  Prioritize malicious scripts in results
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by script status. Options: `active`, `inactive`, `all`
+</ParamField>
+
+<ParamField query="urls" type="string">
+  Comma-separated list of script URLs to filter by
+</ParamField>
+
+### Get script
+
+Retrieve detailed information about a specific script.
+
+```typescript
+const script = await client.pageShield.scripts.get(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Connections
+
+Monitor outbound connections made by scripts on your website.
+
+### List connections
+
+List all connections detected by Page Shield.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const connection of client.pageShield.connections.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(connection.url, connection.host);
+}
+```
+
+### Get connection
+
+Retrieve detailed information about a specific connection.
+
+```typescript
+const connection = await client.pageShield.connections.get(
+  'connection_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Cookies
+
+Monitor cookies set by scripts on your website.
+
+### List cookies
+
+List all cookies detected by Page Shield.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const cookie of client.pageShield.cookies.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(cookie.name, cookie.domain);
+}
+```
+
+### Get cookie
+
+Retrieve detailed information about a specific cookie.
+
+```typescript
+const cookie = await client.pageShield.cookies.get(
+  'cookie_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Policies
+
+Manage Content Security Policy (CSP) configurations for Page Shield.
+
+### Create policy
+
+Create a new Page Shield policy.
+
+```typescript
+const policy = await client.pageShield.policies.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  action: 'allow',
+  description: 'Allow scripts from trusted CDN',
+  expression: 'http.request.uri.path eq "/checkout"',
+  value: 'https://cdn.example.com',
+});
+```
+
+### Update policy
+
+Update an existing Page Shield policy.
+
+```typescript
+const policy = await client.pageShield.policies.update(
+  'policy_id',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    action: 'log',
+    description: 'Updated policy description',
+  }
+);
+```
+
+### List policies
+
+List all Page Shield policies for a zone.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const policy of client.pageShield.policies.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(policy.id, policy.description);
+}
+```
+
+### Get policy
+
+Retrieve a specific Page Shield policy.
+
+```typescript
+const policy = await client.pageShield.policies.get(
+  'policy_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete policy
+
+Delete a Page Shield policy.
+
+```typescript
+await client.pageShield.policies.delete(
+  'policy_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Response types
+
+### Script
+
+Represents a JavaScript file detected on your website.
+
+<ResponseField name="id" type="string" required>
+  Script identifier
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+  Script URL
+</ResponseField>
+
+<ResponseField name="host" type="string" required>
+  Hostname where the script is hosted
+</ResponseField>
+
+<ResponseField name="added_at" type="string" required>
+  When the script was added to Page Shield
+</ResponseField>
+
+<ResponseField name="first_seen_at" type="string" required>
+  When the script was first detected
+</ResponseField>
+
+<ResponseField name="last_seen_at" type="string" required>
+  When the script was last seen
+</ResponseField>
+
+<ResponseField name="url_contains_cdn_cgi_path" type="boolean" required>
+  Whether the URL contains cdn-cgi path
+</ResponseField>
+
+<ResponseField name="hash" type="string">
+  The computed hash of the analyzed script
+</ResponseField>
+
+<ResponseField name="dataflow_score" type="number">
+  The dataflow score of the JavaScript content (0-100)
+</ResponseField>
+
+<ResponseField name="cryptomining_score" type="number">
+  The cryptomining score of the JavaScript content (0-100)
+</ResponseField>
+
+<ResponseField name="integrity_score" type="number">
+  The integrity score of the JavaScript content (0-100)
+</ResponseField>
+
+<ResponseField name="domain_reported_malicious" type="boolean">
+  Whether the domain is reported as malicious
+</ResponseField>
+
+<ResponseField name="fetched_at" type="string">
+  The timestamp of when the script was last fetched
+</ResponseField>
+
+<ResponseField name="first_page_url" type="string">
+  The first page URL where the script was detected
+</ResponseField>
+
+### Connection
+
+Represents an outbound connection made by scripts.
+
+<ResponseField name="id" type="string" required>
+  Connection identifier
+</ResponseField>
+
+<ResponseField name="url" type="string" required>
+  Connection URL
+</ResponseField>
+
+<ResponseField name="host" type="string" required>
+  Hostname of the connection
+</ResponseField>
+
+<ResponseField name="added_at" type="string" required>
+  When the connection was added to Page Shield
+</ResponseField>
+
+<ResponseField name="first_seen_at" type="string" required>
+  When the connection was first detected
+</ResponseField>
+
+<ResponseField name="last_seen_at" type="string" required>
+  When the connection was last seen
+</ResponseField>
+
+### Setting
+
+Page Shield configuration settings.
+
+<ResponseField name="enabled" type="boolean" required>
+  Whether Page Shield is enabled
+</ResponseField>
+
+<ResponseField name="updated_at" type="string" required>
+  When Page Shield was last updated
+</ResponseField>
+
+<ResponseField name="use_cloudflare_reporting_endpoint" type="boolean" required>
+  Whether to use Cloudflare's CSP reporting endpoint
+</ResponseField>
+
+<ResponseField name="use_connection_url_path" type="boolean" required>
+  Whether to analyze connection URL paths
+</ResponseField>
+
+## Related resources
+
+- [Security Center](/api-reference/security-center)
+- [Page Shield Documentation](https://developers.cloudflare.com/page-shield/)
+- [Bot Management](/api-reference/bot-management)

@@ -1,0 +1,104 @@
+---
+title: Logging and middleware
+description: Customize the fetch function to inspect and modify requests and responses
+---
+
+You can provide a custom `fetch` function when instantiating the client, which can be used to inspect or alter the `Request` or `Response` before/after each request.
+
+## Custom fetch function
+
+Provide a custom `fetch` implementation to intercept all HTTP requests:
+
+```ts
+import { fetch } from 'undici'; // as one example
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    console.log('About to make a request', url, init);
+    const response = await fetch(url, init);
+    console.log('Got response', response);
+    return response;
+  },
+});
+```
+
+<Tip>
+This approach is useful for logging, request signing, response transformation, or integrating with custom HTTP clients.
+</Tip>
+
+## Logging requests and responses
+
+You can use the custom `fetch` function to log all API interactions:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    const startTime = Date.now();
+    console.log(`[${new Date().toISOString()}] ${init?.method || 'GET'} ${url}`);
+    
+    const response = await fetch(url, init);
+    const duration = Date.now() - startTime;
+    
+    console.log(`[${new Date().toISOString()}] ${response.status} ${url} (${duration}ms)`);
+    return response;
+  },
+});
+```
+
+## Debug mode
+
+If you set a `DEBUG=true` environment variable, this library will log all requests and responses automatically:
+
+```bash
+DEBUG=true node your-script.js
+```
+
+<Warning>
+Debug mode is intended for debugging purposes only and may change in the future without notice.
+</Warning>
+
+## Request and response inspection
+
+Use the custom `fetch` function to inspect headers, modify requests, or handle responses:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    // Inspect request headers
+    console.log('Request headers:', init?.headers);
+    
+    // Make the request
+    const response = await fetch(url, init);
+    
+    // Inspect response headers
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Rate limit remaining:', response.headers.get('x-ratelimit-remaining'));
+    
+    return response;
+  },
+});
+```
+
+## Using alternative fetch implementations
+
+By default, this library uses `node-fetch` in Node, and expects a global `fetch` function in other environments.
+
+If you would prefer to use a global, web-standards-compliant `fetch` function even in a Node environment (for example, if you are running Node with `--experimental-fetch` or using NextJS which polyfills with `undici`), add the following import before your first import from `"cloudflare"`:
+
+```ts
+// Tell TypeScript and the package to use the global web fetch instead of node-fetch.
+// Note, despite the name, this does not add any polyfills, but expects them to be provided if needed.
+import 'cloudflare/shims/web';
+import Cloudflare from 'cloudflare';
+```
+
+To do the inverse, add `import "cloudflare/shims/node"` (which does import polyfills).
+
+<Note>
+This can also be useful if you are getting the wrong TypeScript types for `Response`.
+</Note>

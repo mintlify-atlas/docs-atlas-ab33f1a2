@@ -1,0 +1,437 @@
+---
+title: Vectorize
+description: Build vector search and AI applications with Vectorize
+---
+
+Cloudflare Vectorize is a globally distributed vector database for building AI-powered applications. Use the API to create indexes, insert vectors, and perform similarity searches.
+
+## Overview
+
+Access the Vectorize API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access Vectorize resources
+const vectorize = client.vectorize;
+```
+
+## Indexes
+
+Manage vector indexes for similarity search.
+
+### Create an index
+
+Create a new vector index.
+
+```typescript
+const index = await client.vectorize.indexes.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'my-index',
+  config: {
+    dimensions: 768,
+    metric: 'cosine',
+  },
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Name for the index
+</ParamField>
+
+<ParamField path="config" type="object" required>
+  Index configuration object
+</ParamField>
+
+<ParamField path="config.dimensions" type="number" required>
+  Vector dimensions (e.g., 768 for many embedding models)
+</ParamField>
+
+<ParamField path="config.metric" type="string" required>
+  Distance metric: 'cosine', 'euclidean', or 'dot-product'
+</ParamField>
+
+<ParamField path="description" type="string">
+  Optional description for the index
+</ParamField>
+
+<ResponseField name="name" type="string">
+  The index name
+</ResponseField>
+
+<ResponseField name="config" type="object">
+  The index configuration
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  ISO 8601 timestamp when the index was created
+</ResponseField>
+
+### List indexes
+
+Retrieve all vector indexes in your account.
+
+```typescript
+for await (const index of client.vectorize.indexes.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(index);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Get an index
+
+Retrieve details about a specific index.
+
+```typescript
+const index = await client.vectorize.indexes.get(
+  'my-index',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Delete an index
+
+Delete a vector index and all its data.
+
+```typescript
+await client.vectorize.indexes.delete(
+  'my-index',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name to delete
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+## Vectors
+
+Manage vectors within an index.
+
+### Insert vectors
+
+Insert vectors into an index.
+
+```typescript
+const response = await client.vectorize.indexes.insert(
+  'my-index',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    vectors: [
+      {
+        id: 'doc-1',
+        values: [0.1, 0.2, 0.3, ...], // 768 dimensions
+        metadata: { title: 'Document 1' },
+      },
+      {
+        id: 'doc-2',
+        values: [0.4, 0.5, 0.6, ...],
+        metadata: { title: 'Document 2' },
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="vectors" type="array" required>
+  Array of vector objects to insert (up to 1000 vectors per request)
+</ParamField>
+
+<ParamField path="vectors.id" type="string" required>
+  Unique identifier for the vector
+</ParamField>
+
+<ParamField path="vectors.values" type="array" required>
+  Vector values (must match index dimensions)
+</ParamField>
+
+<ParamField path="vectors.metadata" type="object">
+  Optional metadata to store with the vector (up to 10KB)
+</ParamField>
+
+<ResponseField name="count" type="number">
+  Number of vectors successfully inserted
+</ResponseField>
+
+### Upsert vectors
+
+Insert or update vectors.
+
+```typescript
+const response = await client.vectorize.indexes.upsert(
+  'my-index',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    vectors: [
+      {
+        id: 'doc-1',
+        values: [0.1, 0.2, 0.3, ...],
+        metadata: { title: 'Updated Document 1' },
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="vectors" type="array" required>
+  Array of vector objects to upsert
+</ParamField>
+
+### Query vectors
+
+Perform a similarity search.
+
+```typescript
+const results = await client.vectorize.indexes.query(
+  'my-index',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    vector: [0.1, 0.2, 0.3, ...], // 768 dimensions
+    top_k: 5,
+    return_values: true,
+    return_metadata: true,
+  }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="vector" type="array" required>
+  Query vector (must match index dimensions)
+</ParamField>
+
+<ParamField path="top_k" type="number">
+  Number of results to return (default: 5, max: 100)
+</ParamField>
+
+<ParamField path="return_values" type="boolean">
+  Whether to return vector values (default: false)
+</ParamField>
+
+<ParamField path="return_metadata" type="boolean">
+  Whether to return metadata (default: true)
+</ParamField>
+
+<ParamField path="filter" type="object">
+  Metadata filters for the search
+</ParamField>
+
+<ResponseField name="matches" type="array">
+  Array of matching vectors
+</ResponseField>
+
+<ResponseField name="matches.id" type="string">
+  The vector ID
+</ResponseField>
+
+<ResponseField name="matches.score" type="number">
+  Similarity score (interpretation depends on metric)
+</ResponseField>
+
+<ResponseField name="matches.metadata" type="object">
+  The vector metadata (if return_metadata=true)
+</ResponseField>
+
+<ResponseField name="matches.values" type="array">
+  The vector values (if return_values=true)
+</ResponseField>
+
+### Get vectors by ID
+
+Retrieve specific vectors by their IDs.
+
+```typescript
+const vectors = await client.vectorize.indexes.getByIds(
+  'my-index',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    ids: ['doc-1', 'doc-2'],
+  }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="ids" type="array" required>
+  Array of vector IDs to retrieve (up to 100 IDs)
+</ParamField>
+
+### Delete vectors by ID
+
+Delete specific vectors from an index.
+
+```typescript
+await client.vectorize.indexes.deleteByIds(
+  'my-index',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    ids: ['doc-1', 'doc-2'],
+  }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="ids" type="array" required>
+  Array of vector IDs to delete (up to 1000 IDs)
+</ParamField>
+
+### List vectors
+
+List all vectors in an index.
+
+```typescript
+const vectors = await client.vectorize.indexes.listVectors(
+  'my-index',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    limit: 100,
+  }
+);
+```
+
+<ParamField path="index_name" type="string" required>
+  The index name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Maximum number of vectors to return (default: 100, max: 1000)
+</ParamField>
+
+<ParamField path="cursor" type="string">
+  Pagination cursor for fetching the next page
+</ParamField>
+
+## Index information
+
+Get statistics about an index.
+
+```typescript
+const info = await client.vectorize.indexes.info(
+  'my-index',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ResponseField name="vector_count" type="number">
+  Total number of vectors in the index
+</ResponseField>
+
+<ResponseField name="dimensions" type="number">
+  Vector dimensions
+</ResponseField>
+
+<ResponseField name="metric" type="string">
+  Distance metric used
+</ResponseField>
+
+## Using Vectorize in Workers
+
+Bind a Vectorize index to your Worker:
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    bindings: [
+      {
+        type: 'vectorize',
+        name: 'VECTORIZE',
+        index_name: 'my-index',
+      },
+    ],
+    modules: [...],
+  }
+);
+```
+
+Then query from your Worker:
+
+```typescript
+export default {
+  async fetch(request, env) {
+    // Insert vectors
+    await env.VECTORIZE.insert([
+      {
+        id: 'doc-1',
+        values: embeddings,
+        metadata: { title: 'Document 1' },
+      },
+    ]);
+    
+    // Query for similar vectors
+    const results = await env.VECTORIZE.query(
+      queryEmbedding,
+      { topK: 5 }
+    );
+    
+    return Response.json(results);
+  },
+};
+```

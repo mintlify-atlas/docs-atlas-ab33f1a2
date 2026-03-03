@@ -1,0 +1,264 @@
+---
+title: 'Zaraz'
+description: 'API reference for Cloudflare Zaraz (third-party tool manager)'
+---
+
+## Overview
+
+Cloudflare Zaraz loads third-party tools like analytics, marketing pixels, and customer support widgets without slowing down your website. Manage configurations, publish changes, and view history.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Workflow
+
+Manage Zaraz workflow settings.
+
+### Update workflow
+
+Update the Zaraz workflow for a zone.
+
+```typescript
+const workflow = await client.zaraz.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  workflow: 'realtime',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="workflow" type="object" required>
+  Zaraz workflow configuration
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Workflow identifier
+</ResponseField>
+
+<ResponseField name="settings" type="object">
+  Workflow settings
+</ResponseField>
+
+### Get workflow
+
+Retrieve current workflow configuration.
+
+```typescript
+const workflow = await client.zaraz.workflow.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+## Config
+
+Manage Zaraz configuration.
+
+### Update configuration
+
+Update Zaraz configuration for a zone.
+
+```typescript
+const config = await client.zaraz.config.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  // configuration settings
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### Get configuration
+
+Retrieve current Zaraz configuration.
+
+```typescript
+const config = await client.zaraz.config.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ResponseField name="tools" type="array">
+  Configured third-party tools
+</ResponseField>
+
+<ResponseField name="triggers" type="array">
+  Event triggers
+</ResponseField>
+
+<ResponseField name="variables" type="array">
+  Custom variables
+</ResponseField>
+
+## Publish
+
+Publish Zaraz configuration changes.
+
+### Publish configuration
+
+Publish pending configuration changes to production.
+
+```typescript
+const result = await client.zaraz.publish.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  description: 'Added Google Analytics 4',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="description" type="string">
+  Description of the changes being published
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Publish identifier
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Publish status
+</ResponseField>
+
+<ResponseField name="published_at" type="string">
+  When the configuration was published
+</ResponseField>
+
+## History
+
+View Zaraz configuration history.
+
+### List history
+
+Retrieve configuration change history.
+
+```typescript
+const history = await client.zaraz.history.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ResponseField name="id" type="string">
+  History entry identifier
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Change description
+</ResponseField>
+
+<ResponseField name="published_at" type="string">
+  Publication timestamp
+</ResponseField>
+
+<ResponseField name="published_by" type="string">
+  User who published the changes
+</ResponseField>
+
+### Update history entry
+
+```typescript
+const entry = await client.zaraz.history.update(
+  historyId,
+  params
+);
+```
+
+## Default
+
+Manage default Zaraz settings.
+
+### Get default settings
+
+Retrieve default Zaraz configuration.
+
+```typescript
+const defaults = await client.zaraz.default.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+## Export
+
+Export Zaraz configuration.
+
+### Export configuration
+
+Export the current Zaraz configuration.
+
+```typescript
+const exported = await client.zaraz.export.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+Exported configurations can be used for backup, migration, or version control.
+
+## Types
+
+### Configuration
+
+Zaraz configuration object.
+
+<ResponseField name="tools" type="array">
+  Third-party tools (analytics, marketing, support)
+</ResponseField>
+
+<ResponseField name="triggers" type="array">
+  Event triggers that activate tools
+</ResponseField>
+
+<ResponseField name="variables" type="array">
+  Custom variables for tool configuration
+</ResponseField>
+
+<ResponseField name="consent" type="object">
+  Consent management settings
+</ResponseField>
+
+### NeoEvent
+
+Tool event configuration.
+
+<ResponseField name="actionType" type="string">
+  Tool event type
+</ResponseField>
+
+<ResponseField name="blockingTriggers" type="string[]">
+  List of blocking trigger IDs
+</ResponseField>
+
+<ResponseField name="firingTriggers" type="string[]">
+  List of firing trigger IDs
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Event payload
+</ResponseField>
+
+## Use cases
+
+Zaraz is useful for:
+
+- **Performance**: Load third-party tools without blocking page rendering
+- **Privacy**: Manage user consent and data collection
+- **Simplicity**: Configure tools without editing code
+- **Control**: Enable/disable tools from the dashboard
+- **Debugging**: Test tools in staging before publishing

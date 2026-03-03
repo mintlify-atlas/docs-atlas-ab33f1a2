@@ -1,0 +1,298 @@
+---
+title: 'Alerting'
+description: 'API reference for Cloudflare Alerting (notifications and alerts)'
+---
+
+## Overview
+
+Cloudflare Alerting sends notifications when events occur on your Cloudflare account or zones. Manage alert policies, notification destinations, and view alert history.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Policies
+
+Manage alert policies.
+
+### Create a policy
+
+Create a new alert policy.
+
+```typescript
+const policy = await client.alerting.policies.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'SSL Certificate Expiring',
+  alert_type: 'universal_ssl_event_type',
+  enabled: true,
+  mechanisms: {
+    email: [{ id: 'user@example.com' }],
+  },
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Policy name
+</ParamField>
+
+<ParamField path="alert_type" type="string" required>
+  Type of alert (e.g., `universal_ssl_event_type`, `dos_attack_l7`, `health_check_status_notification`)
+</ParamField>
+
+<ParamField path="enabled" type="boolean" required>
+  Whether the policy is active
+</ParamField>
+
+<ParamField path="mechanisms" type="object" required>
+  Notification mechanisms (email, webhook, PagerDuty, etc.)
+</ParamField>
+
+<ParamField path="filters" type="object">
+  Conditions that trigger the alert
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Policy identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Policy name
+</ResponseField>
+
+<ResponseField name="created" type="string">
+  When the policy was created
+</ResponseField>
+
+<ResponseField name="modified" type="string">
+  When the policy was last modified
+</ResponseField>
+
+### Update a policy
+
+Update an existing alert policy.
+
+```typescript
+const policy = await client.alerting.policies.update(
+  policyId,
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    enabled: false,
+  }
+);
+```
+
+### List policies
+
+List all alert policies.
+
+```typescript
+const policies = await client.alerting.policies.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Get a policy
+
+Get details of a specific alert policy.
+
+```typescript
+const policy = await client.alerting.policies.get(
+  policyId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete a policy
+
+Delete an alert policy.
+
+```typescript
+await client.alerting.policies.delete(
+  policyId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Destinations
+
+Manage notification destinations.
+
+```typescript
+const destinations = client.alerting.destinations;
+```
+
+Destinations define where alerts are sent (email, webhook, PagerDuty, Slack, etc.).
+
+## History
+
+View alert history.
+
+### List alert history
+
+Retrieve a history of triggered alerts.
+
+```typescript
+const history = await client.alerting.history.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="since" type="string">
+  Filter alerts since this timestamp
+</ParamField>
+
+<ParamField path="before" type="string">
+  Filter alerts before this timestamp
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Alert history identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Alert name
+</ResponseField>
+
+<ResponseField name="alert_type" type="string">
+  Type of alert
+</ResponseField>
+
+<ResponseField name="triggered_at" type="string">
+  When the alert was triggered
+</ResponseField>
+
+## Silences
+
+Manage alert silences (temporarily disable alerts).
+
+### Create a silence
+
+Create a new alert silence.
+
+```typescript
+const silence = await client.alerting.silences.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  description: 'Maintenance window',
+  start: '2024-01-01T00:00:00Z',
+  end: '2024-01-01T04:00:00Z',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  Silence description
+</ParamField>
+
+<ParamField path="start" type="string" required>
+  Start time (ISO 8601 format)
+</ParamField>
+
+<ParamField path="end" type="string" required>
+  End time (ISO 8601 format)
+</ParamField>
+
+### Update a silence
+
+```typescript
+const silence = await client.alerting.silences.update(
+  silenceId,
+  params
+);
+```
+
+### List silences
+
+```typescript
+const silences = await client.alerting.silences.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Get a silence
+
+```typescript
+const silence = await client.alerting.silences.get(
+  silenceId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete a silence
+
+```typescript
+await client.alerting.silences.delete(
+  silenceId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Available alerts
+
+Get information about available alert types.
+
+### List available alerts
+
+```typescript
+const alerts = await client.alerting.availableAlerts.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ResponseField name="type" type="string">
+  Alert type identifier
+</ResponseField>
+
+<ResponseField name="display_name" type="string">
+  Human-readable alert name
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Alert description
+</ResponseField>
+
+## Types
+
+### Mechanism
+
+Notification delivery mechanism.
+
+<ResponseField name="email" type="array">
+  Email addresses to notify
+</ResponseField>
+
+<ResponseField name="webhooks" type="array">
+  Webhook URLs to call
+</ResponseField>
+
+<ResponseField name="pagerduty" type="array">
+  PagerDuty integration keys
+</ResponseField>
+
+### PolicyFilter
+
+Conditions for triggering alerts.
+
+<ResponseField name="zones" type="string[]">
+  Zone IDs to monitor
+</ResponseField>
+
+<ResponseField name="health_check_id" type="string">
+  Health check identifier (for health check alerts)
+</ResponseField>

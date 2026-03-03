@@ -1,0 +1,315 @@
+---
+title: Waiting rooms
+description: Manage Cloudflare Waiting Rooms to queue visitors during traffic surges
+---
+
+Waiting Rooms allow you to queue visitors when your website experiences high traffic, ensuring a smooth user experience and protecting your origin servers from being overwhelmed.
+
+## Create a waiting room
+
+Creates a new waiting room for a zone.
+
+```typescript
+const waitingRoom = await client.waitingRooms.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  host: 'shop.example.com',
+  name: 'production_webinar',
+  new_users_per_minute: 200,
+  total_active_users: 200,
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="host" type="string" required>
+  The hostname to which this waiting room will be applied (no wildcards). The hostname must be the primary domain, subdomain, or custom hostname of this zone.
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  A unique name to identify the waiting room. Only alphanumeric characters, hyphens, and underscores are allowed.
+</ParamField>
+
+<ParamField path="new_users_per_minute" type="number" required>
+  The number of new users that will be let into the route every minute.
+</ParamField>
+
+<ParamField path="total_active_users" type="number" required>
+  The total number of active user sessions on the route at a point in time.
+</ParamField>
+
+<ParamField path="path" type="string">
+  Sets the path within the host to enable the waiting room on. The waiting room will be enabled for all subpaths as well. Defaults to `/`.
+</ParamField>
+
+<ParamField path="description" type="string">
+  A description of the waiting room.
+</ParamField>
+
+<ParamField path="session_duration" type="number">
+  Lifetime of a cookie (in minutes) set by Cloudflare for users who get access to the route. Defaults to 5 minutes.
+</ParamField>
+
+<ParamField path="disable_session_renewal" type="boolean">
+  Disables automatic renewal of session cookies. Defaults to false.
+</ParamField>
+
+<ParamField path="suspended" type="boolean">
+  Suspends the waiting room, allowing all traffic through. Defaults to false.
+</ParamField>
+
+<ParamField path="queue_all" type="boolean">
+  Whether to queue all visitors, regardless of traffic levels. Defaults to false.
+</ParamField>
+
+<ParamField path="json_response_enabled" type="boolean">
+  If true, requests to the waiting room with the header `Accept: application/json` will receive a JSON response object.
+</ParamField>
+
+<ParamField path="custom_page_html" type="string">
+  Custom HTML to display while users are in the waiting room.
+</ParamField>
+
+<ParamField path="default_template_language" type="string">
+  The language to use for the default waiting room page. Available languages: de-DE, en-US, es-ES, fr-FR, id-ID, it-IT, ja-JP, ko-KR, nl-NL, pl-PL, pt-BR, tr-TR, zh-CN, zh-TW.
+</ParamField>
+
+<ParamField path="cookie_attributes" type="object">
+  Configures cookie attributes for the waiting room cookie.
+  
+  <ParamField path="samesite" type="string">
+    SameSite attribute: `auto`, `lax`, `none`, or `strict`
+  </ParamField>
+  
+  <ParamField path="secure" type="string">
+    Secure attribute: `auto`, `always`, or `never`
+  </ParamField>
+</ParamField>
+
+<ParamField path="additional_routes" type="array">
+  Additional hostname and path combinations to which this waiting room will be applied.
+  
+  <ParamField path="host" type="string">
+    The hostname for this additional route
+  </ParamField>
+  
+  <ParamField path="path" type="string">
+    The path for this additional route
+  </ParamField>
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The waiting room identifier
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  Timestamp when the waiting room was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  Timestamp when the waiting room was last modified
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The waiting room name
+</ResponseField>
+
+<ResponseField name="host" type="string">
+  The hostname where the waiting room is applied
+</ResponseField>
+
+<ResponseField name="path" type="string">
+  The path where the waiting room is applied
+</ResponseField>
+
+<ResponseField name="total_active_users" type="number">
+  The total number of active user sessions allowed
+</ResponseField>
+
+<ResponseField name="new_users_per_minute" type="number">
+  The number of new users admitted per minute
+</ResponseField>
+
+## Update a waiting room
+
+Updates a configured waiting room.
+
+```typescript
+const waitingRoom = await client.waitingRooms.update(
+  '699d98642c564d2e855e9661899b7252',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    host: 'shop.example.com',
+    name: 'production_webinar',
+    new_users_per_minute: 300,
+    total_active_users: 300,
+  },
+);
+```
+
+<ParamField path="waitingRoomId" type="string" required>
+  The waiting room identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## List waiting rooms
+
+Lists all waiting rooms for an account or zone.
+
+```typescript
+for await (const waitingRoom of client.waitingRooms.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(waitingRoom.name);
+}
+```
+
+<ParamField path="zone_id" type="string">
+  The zone identifier (use either zone_id or account_id)
+</ParamField>
+
+<ParamField path="account_id" type="string">
+  The account identifier (use either zone_id or account_id)
+</ParamField>
+
+## Get a waiting room
+
+Fetches details for a single configured waiting room.
+
+```typescript
+const waitingRoom = await client.waitingRooms.get(
+  '699d98642c564d2e855e9661899b7252',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="waitingRoomId" type="string" required>
+  The waiting room identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Edit a waiting room
+
+Patches a configured waiting room, updating only the specified fields.
+
+```typescript
+const waitingRoom = await client.waitingRooms.edit(
+  '699d98642c564d2e855e9661899b7252',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    suspended: true,
+  },
+);
+```
+
+<ParamField path="waitingRoomId" type="string" required>
+  The waiting room identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Delete a waiting room
+
+Deletes a waiting room.
+
+```typescript
+await client.waitingRooms.delete(
+  '699d98642c564d2e855e9661899b7252',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="waitingRoomId" type="string" required>
+  The waiting room identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Preview waiting room
+
+Get a preview of how a waiting room will look.
+
+```typescript
+const preview = await client.waitingRooms.page.preview({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  waiting_room_id: '699d98642c564d2e855e9661899b7252',
+});
+```
+
+## Waiting room events
+
+Manage scheduled events for waiting rooms to handle predictable traffic surges.
+
+```typescript
+// Create an event
+const event = await client.waitingRooms.events.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  waiting_room_id: '699d98642c564d2e855e9661899b7252',
+  name: 'Black Friday Sale',
+  event_start_time: '2026-11-27T12:00:00Z',
+  event_end_time: '2026-11-27T18:00:00Z',
+  new_users_per_minute: 500,
+  total_active_users: 1000,
+});
+
+// List events
+for await (const event of client.waitingRooms.events.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  waiting_room_id: '699d98642c564d2e855e9661899b7252',
+})) {
+  console.log(event.name);
+}
+```
+
+## Waiting room rules
+
+Manage rules to bypass or customize waiting room behavior.
+
+```typescript
+// Create a rule
+const rule = await client.waitingRooms.rules.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  waiting_room_id: '699d98642c564d2e855e9661899b7252',
+  action: 'bypass_waiting_room',
+  expression: 'http.request.uri.path contains "/admin"',
+});
+```
+
+## Get waiting room status
+
+Get the current status and metrics for a waiting room.
+
+```typescript
+const status = await client.waitingRooms.statuses.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  waiting_room_id: '699d98642c564d2e855e9661899b7252',
+});
+```
+
+## Waiting room settings
+
+Manage zone-level waiting room settings.
+
+```typescript
+// Get settings
+const settings = await client.waitingRooms.settings.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Update settings
+await client.waitingRooms.settings.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  search_engine_crawler_bypass: true,
+});
+```

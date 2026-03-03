@@ -1,0 +1,200 @@
+---
+title: Load balancers
+description: Manage Cloudflare Load Balancers to distribute traffic across multiple origin servers
+---
+
+The Load Balancers API allows you to create and manage load balancers that distribute traffic across multiple origin servers, improving availability and performance.
+
+## Create a load balancer
+
+Create a new load balancer for a zone.
+
+```typescript
+const loadBalancer = await client.loadBalancers.create({
+  zone_id: '699d98642c564d2e855e9661899b7252',
+  default_pools: [
+    '17b5962d775c646f3f9725cbc7a53df4',
+    '9290f38c5d07c2e2f4df57b1f61d4196',
+    '00920f38ce07c2e2f4df50b1f61d4194',
+  ],
+  fallback_pool: 'fallback_pool',
+  name: 'www.example.com',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="default_pools" type="array" required>
+  A list of pool IDs ordered by their failover priority. Cloudflare steers traffic to the first pool in the list, failing over to the next healthy pool.
+</ParamField>
+
+<ParamField path="fallback_pool" type="string" required>
+  The pool ID to use when all other pools are detected as unhealthy.
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  The DNS hostname to associate with your load balancer.
+</ParamField>
+
+<ParamField path="description" type="string">
+  An optional description of your load balancer.
+</ParamField>
+
+<ParamField path="enabled" type="boolean">
+  Whether the load balancer is enabled. Defaults to true.
+</ParamField>
+
+<ParamField path="proxied" type="boolean">
+  Whether the hostname gets Cloudflare's origin protection. Defaults to false.
+</ParamField>
+
+<ParamField path="ttl" type="number">
+  Time to live (TTL) of the DNS entry for the IP address returned by this load balancer.
+</ParamField>
+
+<ParamField path="region_pools" type="object">
+  A mapping of region/country codes to a list of pool IDs (ordered by their failover priority) for the given region.
+</ParamField>
+
+<ParamField path="adaptive_routing" type="object">
+  Controls features that modify the routing of requests to pools and origins in response to dynamic conditions.
+  
+  <ParamField path="failover_across_pools" type="boolean">
+    Extends zero-downtime failover of requests to healthy origins from alternate pools.
+  </ParamField>
+</ParamField>
+
+<ParamField path="session_affinity" type="string">
+  Specifies the type of session affinity the load balancer should use. Options: `none`, `cookie`, `ip_cookie`, `header`.
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The unique identifier of the load balancer
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  The timestamp when the load balancer was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  The timestamp when the load balancer was last modified
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The DNS hostname associated with the load balancer
+</ResponseField>
+
+<ResponseField name="default_pools" type="array">
+  The list of pool IDs ordered by their failover priority
+</ResponseField>
+
+<ResponseField name="fallback_pool" type="string">
+  The pool ID used when all other pools are unhealthy
+</ResponseField>
+
+## Update a load balancer
+
+Update a configured load balancer.
+
+```typescript
+const loadBalancer = await client.loadBalancers.update(
+  '699d98642c564d2e855e9661899b7252',
+  {
+    zone_id: '699d98642c564d2e855e9661899b7252',
+    default_pools: [
+      '17b5962d775c646f3f9725cbc7a53df4',
+      '9290f38c5d07c2e2f4df57b1f61d4196',
+    ],
+    fallback_pool: 'fallback_pool',
+    name: 'www.example.com',
+  },
+);
+```
+
+<ParamField path="loadBalancerId" type="string" required>
+  The load balancer identifier
+</ParamField>
+
+## List load balancers
+
+List all load balancers configured in a zone.
+
+```typescript
+for await (const loadBalancer of client.loadBalancers.list({
+  zone_id: '699d98642c564d2e855e9661899b7252',
+})) {
+  console.log(loadBalancer.name);
+}
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Get a load balancer
+
+Fetch details for a single configured load balancer.
+
+```typescript
+const loadBalancer = await client.loadBalancers.get(
+  '699d98642c564d2e855e9661899b7252',
+  { zone_id: '699d98642c564d2e855e9661899b7252' },
+);
+```
+
+<ParamField path="loadBalancerId" type="string" required>
+  The load balancer identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Edit a load balancer
+
+Apply changes to an existing load balancer, overwriting only the supplied properties.
+
+```typescript
+const loadBalancer = await client.loadBalancers.edit(
+  '699d98642c564d2e855e9661899b7252',
+  { 
+    zone_id: '699d98642c564d2e855e9661899b7252',
+    enabled: false,
+  },
+);
+```
+
+<ParamField path="loadBalancerId" type="string" required>
+  The load balancer identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Delete a load balancer
+
+Delete a configured load balancer.
+
+```typescript
+await client.loadBalancers.delete(
+  '699d98642c564d2e855e9661899b7252',
+  { zone_id: '699d98642c564d2e855e9661899b7252' },
+);
+```
+
+<ParamField path="loadBalancerId" type="string" required>
+  The load balancer identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Related resources
+
+- **Monitors**: Health check monitors for your origin servers
+- **Pools**: Groups of origin servers that can be used by load balancers
+- **Monitor Groups**: Manage groups of health check monitors

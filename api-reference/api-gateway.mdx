@@ -1,0 +1,427 @@
+---
+title: API Gateway
+description: Secure and manage your APIs with discovery, schema validation, and routing
+---
+
+The API Gateway API provides comprehensive API security and management features including API discovery, schema validation, operation management, and user-defined schemas.
+
+## Initialize the API Gateway resource
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+const apiGateway = client.apiGateway;
+```
+
+## Configurations
+
+Manage API Gateway configurations for your zone.
+
+### Get configuration
+
+Retrieve the current API Gateway configuration.
+
+```typescript
+const config = await client.apiGateway.configurations.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Update configuration
+
+Update API Gateway configuration settings.
+
+```typescript
+const config = await client.apiGateway.configurations.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  auth_id_characteristics: [
+    {
+      name: 'authorization',
+      type: 'header',
+    },
+  ],
+});
+```
+
+## Discovery
+
+Automatically discover API operations from your traffic.
+
+### Get discovery status
+
+Retrieve the status of API discovery for your zone.
+
+```typescript
+const discovery = await client.apiGateway.discovery.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Discovery operations
+
+List discovered API operations.
+
+```typescript
+const operations = await client.apiGateway.discovery.operations.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+## Operations
+
+Manage API operations and endpoints.
+
+### Create operation
+
+Add a new API operation.
+
+```typescript
+const operation = await client.apiGateway.operations.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  endpoint: '/api/users',
+  host: 'api.example.com',
+  method: 'GET',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField body="endpoint" type="string" required>
+  API endpoint path
+</ParamField>
+
+<ParamField body="host" type="string" required>
+  API host
+</ParamField>
+
+<ParamField body="method" type="string" required>
+  HTTP method (GET, POST, PUT, DELETE, etc.)
+</ParamField>
+
+### List operations
+
+List all API operations for your zone.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const operation of client.apiGateway.operations.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(operation.method, operation.endpoint);
+}
+```
+
+<ParamField query="direction" type="string">
+  Direction to order operations. Options: `asc`, `desc`
+</ParamField>
+
+<ParamField query="endpoint" type="string">
+  Filter by endpoint path
+</ParamField>
+
+<ParamField query="feature" type="string[]">
+  Filter by features
+</ParamField>
+
+<ParamField query="host" type="string[]">
+  Filter by hosts
+</ParamField>
+
+<ParamField query="method" type="string[]">
+  Filter by HTTP methods
+</ParamField>
+
+<ParamField query="order" type="string">
+  Field to order by. Options: `method`, `host`, `endpoint`, `thresholds.$key`
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number of paginated results
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of items per page (default: 25)
+</ParamField>
+
+### Get operation
+
+Retrieve details about a specific operation.
+
+```typescript
+const operation = await client.apiGateway.operations.get(
+  'operation_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete operation
+
+Remove an API operation.
+
+```typescript
+await client.apiGateway.operations.delete(
+  'operation_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Bulk create operations
+
+Create multiple operations at once.
+
+```typescript
+const operations = await client.apiGateway.operations.bulkCreate({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  body: [
+    {
+      endpoint: '/api/users',
+      host: 'api.example.com',
+      method: 'GET',
+    },
+    {
+      endpoint: '/api/users',
+      host: 'api.example.com',
+      method: 'POST',
+    },
+  ],
+});
+```
+
+### Bulk delete operations
+
+Delete multiple operations at once.
+
+```typescript
+await client.apiGateway.operations.bulkDelete({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  body: {
+    operation_ids: ['op1', 'op2', 'op3'],
+  },
+});
+```
+
+## Schemas
+
+Manage OpenAPI schemas for your APIs.
+
+### List schemas
+
+List all schemas for your zone.
+
+```typescript
+const schemas = await client.apiGateway.schemas.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField query="omit_source" type="boolean">
+  Omit the source data of schemas in the response
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of items per page
+</ParamField>
+
+<ParamField query="validation_enabled" type="boolean">
+  Filter by validation enabled status
+</ParamField>
+
+## User schemas
+
+Manage user-defined API schemas.
+
+### Create user schema
+
+Upload a user-defined OpenAPI schema.
+
+```typescript
+const schema = await client.apiGateway.userSchemas.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  kind: 'openapi_v3',
+  name: 'My API Schema',
+  source: '<OpenAPI schema content>',
+  validation_enabled: true,
+});
+```
+
+<ParamField body="kind" type="string" required>
+  Schema kind. Currently only `openapi_v3` is supported.
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Schema name
+</ParamField>
+
+<ParamField body="source" type="string" required>
+  OpenAPI schema content
+</ParamField>
+
+<ParamField body="validation_enabled" type="boolean">
+  Enable schema validation
+</ParamField>
+
+### List user schemas
+
+List all user-defined schemas.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const schema of client.apiGateway.userSchemas.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(schema.name);
+}
+```
+
+### Get user schema
+
+Retrieve a specific user schema.
+
+```typescript
+const schema = await client.apiGateway.userSchemas.get(
+  'schema_id',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    omit_source: false,
+  }
+);
+```
+
+### Edit user schema
+
+Update a user-defined schema.
+
+```typescript
+const schema = await client.apiGateway.userSchemas.edit(
+  'schema_id',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    validation_enabled: true,
+  }
+);
+```
+
+### Delete user schema
+
+Remove a user-defined schema.
+
+```typescript
+await client.apiGateway.userSchemas.delete(
+  'schema_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Settings
+
+Manage API Gateway settings including schema validation.
+
+```typescript
+const settings = client.apiGateway.settings;
+```
+
+## Expression templates
+
+Manage expression templates for API routing and filtering.
+
+```typescript
+const expressionTemplate = client.apiGateway.expressionTemplate;
+```
+
+## Response types
+
+### APIShield (Operation)
+
+Represents an API operation.
+
+<ResponseField name="operation_id" type="string" required>
+  Operation identifier
+</ResponseField>
+
+<ResponseField name="method" type="string" required>
+  HTTP method
+</ResponseField>
+
+<ResponseField name="endpoint" type="string" required>
+  API endpoint path
+</ResponseField>
+
+<ResponseField name="host" type="string" required>
+  API host
+</ResponseField>
+
+### DiscoveryOperation
+
+Represents a discovered API operation.
+
+<ResponseField name="id" type="string">
+  Operation identifier
+</ResponseField>
+
+<ResponseField name="method" type="string">
+  HTTP method
+</ResponseField>
+
+<ResponseField name="endpoint" type="string">
+  API endpoint path
+</ResponseField>
+
+<ResponseField name="host" type="string">
+  API host
+</ResponseField>
+
+<ResponseField name="origin" type="string">
+  How the operation was discovered
+</ResponseField>
+
+### Configuration
+
+API Gateway configuration settings.
+
+<ResponseField name="auth_id_characteristics" type="array">
+  Characteristics used to identify authenticated requests
+</ResponseField>
+
+### OldPublicSchema (User Schema)
+
+User-defined API schema.
+
+<ResponseField name="schema_id" type="string">
+  Schema identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Schema name
+</ResponseField>
+
+<ResponseField name="kind" type="string">
+  Schema kind (openapi_v3)
+</ResponseField>
+
+<ResponseField name="source" type="string">
+  OpenAPI schema content
+</ResponseField>
+
+<ResponseField name="validation_enabled" type="boolean">
+  Whether validation is enabled
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  When the schema was created
+</ResponseField>
+
+## Related resources
+
+- [Load Balancers](/api-reference/load-balancers)
+- [API Gateway Documentation](https://developers.cloudflare.com/api-shield/)
+- [Security Center](/api-reference/security-center)

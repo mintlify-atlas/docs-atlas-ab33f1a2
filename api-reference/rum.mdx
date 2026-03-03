@@ -1,0 +1,229 @@
+---
+title: 'RUM'
+description: 'API reference for Cloudflare RUM (Real User Monitoring)'
+---
+
+## Overview
+
+Cloudflare RUM (Real User Monitoring) provides visibility into how real users experience your website. Collect performance metrics, monitor Core Web Vitals, and analyze user behavior.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Site info
+
+Manage RUM sites.
+
+### Create a site
+
+Create a new RUM site configuration.
+
+```typescript
+const site = await client.rum.siteInfo.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  host: 'example.com',
+  zone_tag: 'zone-id-here',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="host" type="string" required>
+  Hostname to monitor
+</ParamField>
+
+<ParamField path="zone_tag" type="string">
+  Associated zone identifier
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Site identifier
+</ResponseField>
+
+<ResponseField name="host" type="string">
+  Monitored hostname
+</ResponseField>
+
+<ResponseField name="created" type="string">
+  When the site was created
+</ResponseField>
+
+### Update a site
+
+Update an existing RUM site.
+
+```typescript
+const site = await client.rum.siteInfo.update(
+  siteId,
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    host: 'updated.example.com',
+  }
+);
+```
+
+### List sites
+
+List all RUM sites in an account.
+
+```typescript
+const sites = await client.rum.siteInfo.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Get a site
+
+Get details of a specific RUM site.
+
+```typescript
+const site = await client.rum.siteInfo.get(
+  siteId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete a site
+
+Delete a RUM site.
+
+```typescript
+await client.rum.siteInfo.delete(
+  siteId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Rules
+
+Manage RUM sampling and collection rules.
+
+### Create a rule
+
+Create a new RUM rule.
+
+```typescript
+const rule = await client.rum.rules.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  site_tag: 'site-id-here',
+  // rule configuration
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="site_tag" type="string" required>
+  Site identifier
+</ParamField>
+
+### Update a rule
+
+Update an existing RUM rule.
+
+```typescript
+const rule = await client.rum.rules.update(
+  ruleId,
+  params
+);
+```
+
+### List rules
+
+List all RUM rules.
+
+```typescript
+const rules = await client.rum.rules.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Delete a rule
+
+Delete a RUM rule.
+
+```typescript
+await client.rum.rules.delete(
+  ruleId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Bulk create rules
+
+Create multiple RUM rules at once.
+
+```typescript
+const result = await client.rum.rules.bulkCreate({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  rules: [
+    // array of rule configurations
+  ],
+});
+```
+
+## Types
+
+### Site
+
+RUM site configuration.
+
+<ResponseField name="id" type="string">
+  Site identifier
+</ResponseField>
+
+<ResponseField name="host" type="string">
+  Monitored hostname
+</ResponseField>
+
+<ResponseField name="zone_tag" type="string">
+  Associated zone ID
+</ResponseField>
+
+<ResponseField name="auto_install" type="boolean">
+  Whether RUM is auto-installed
+</ResponseField>
+
+<ResponseField name="created" type="string">
+  Creation timestamp
+</ResponseField>
+
+### RUMRule
+
+RUM sampling and collection rule.
+
+<ResponseField name="id" type="string">
+  Rule identifier
+</ResponseField>
+
+<ResponseField name="site_tag" type="string">
+  Associated site ID
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether the rule is active
+</ResponseField>
+
+<ResponseField name="priority" type="number">
+  Rule priority
+</ResponseField>
+
+## Use cases
+
+RUM is useful for:
+
+- **Performance monitoring**: Track Core Web Vitals (LCP, FID, CLS)
+- **User experience**: Understand real-world performance across devices and locations
+- **Debugging**: Identify slow pages and performance bottlenecks
+- **Business insights**: Correlate performance with business metrics
+- **Optimization**: Make data-driven decisions to improve site speed

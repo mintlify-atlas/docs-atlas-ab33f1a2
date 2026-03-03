@@ -1,0 +1,258 @@
+---
+title: Zones
+description: Manage Cloudflare zones (domains) and their settings
+---
+
+The Zones resource provides methods to manage Cloudflare zones, which represent domains or subdomains on the Cloudflare platform.
+
+## Main methods
+
+### create
+
+Create a new zone.
+
+```typescript
+const zone = await client.zones.create({
+  account: { id: '023e105f4ecef8ad9ca31a8372d0c353' },
+  name: 'example.com',
+  type: 'full'
+});
+```
+
+<ParamField path="account" type="object" required>
+  The account the zone belongs to
+  
+  <ParamField path="account.id" type="string">
+    Account identifier
+  </ParamField>
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  The domain name (e.g., 'example.com')
+</ParamField>
+
+<ParamField path="type" type="'full' | 'partial' | 'secondary' | 'internal'">
+  Zone type. A full zone implies DNS is hosted with Cloudflare. A partial zone is typically a partner-hosted zone or CNAME setup.
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Zone identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The domain name
+</ResponseField>
+
+<ResponseField name="status" type="'initializing' | 'pending' | 'active' | 'moved'">
+  The zone status on Cloudflare
+</ResponseField>
+
+<ResponseField name="name_servers" type="string[]">
+  The name servers Cloudflare assigns to the zone
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  When the zone was created
+</ResponseField>
+
+<ResponseField name="activated_on" type="string | null">
+  The last time proof of ownership was detected and the zone was made active
+</ResponseField>
+
+### list
+
+List, search, sort, and filter zones. Listing zones across more than 500 accounts is currently not allowed.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const zone of client.zones.list()) {
+  console.log(zone.name);
+}
+
+// Filter by account
+for await (const zone of client.zones.list({
+  account: { id: '023e105f4ecef8ad9ca31a8372d0c353' },
+  status: 'active'
+})) {
+  console.log(zone.name);
+}
+```
+
+<ParamField path="account" type="object">
+  Filter by account
+  
+  <ParamField path="account.id" type="string">
+    Filter by account ID
+  </ParamField>
+  
+  <ParamField path="account.name" type="string">
+    Filter by account name (supports operators like 'contains', 'starts_with', etc.)
+  </ParamField>
+</ParamField>
+
+<ParamField path="name" type="string">
+  Filter by domain name (supports operators like 'contains', 'starts_with', 'ends_with', etc.)
+</ParamField>
+
+<ParamField path="status" type="'initializing' | 'pending' | 'active' | 'moved'">
+  Filter by zone status
+</ParamField>
+
+<ParamField path="order" type="'name' | 'status' | 'account.id' | 'account.name' | 'plan.id'">
+  Field to order zones by
+</ParamField>
+
+<ParamField path="direction" type="'asc' | 'desc'">
+  Direction to order zones
+</ParamField>
+
+<ParamField path="match" type="'any' | 'all'">
+  Whether to match all search requirements or at least one
+</ParamField>
+
+### delete
+
+Delete an existing zone.
+
+```typescript
+const result = await client.zones.delete({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### edit
+
+Edit a zone. Only one zone property can be changed at a time.
+
+```typescript
+const zone = await client.zones.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  paused: false
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="paused" type="boolean">
+  Whether the zone is only using Cloudflare DNS services (true means no security or performance benefits)
+</ParamField>
+
+<ParamField path="type" type="'full' | 'partial' | 'secondary' | 'internal'">
+  Zone type (Enterprise only)
+</ParamField>
+
+<ParamField path="vanity_name_servers" type="string[]">
+  Custom name servers (Business and Enterprise plans only)
+</ParamField>
+
+### get
+
+Get zone details.
+
+```typescript
+const zone = await client.zones.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+## Zone type
+
+```typescript
+interface Zone {
+  id: string;
+  account: {
+    id?: string;
+    name?: string;
+  };
+  name: string;
+  status?: 'initializing' | 'pending' | 'active' | 'moved';
+  type?: 'full' | 'partial' | 'secondary' | 'internal';
+  paused?: boolean;
+  development_mode: number;
+  name_servers: string[];
+  original_name_servers: string[] | null;
+  original_registrar: string | null;
+  created_on: string;
+  modified_on: string;
+  activated_on: string | null;
+  owner: {
+    id?: string;
+    name?: string;
+    type?: string;
+  };
+  meta: {
+    cdn_only?: boolean;
+    dns_only?: boolean;
+    foundation_dns?: boolean;
+    page_rule_quota?: number;
+    phishing_detected?: boolean;
+  };
+  vanity_name_servers?: string[];
+}
+```
+
+## Sub-resources
+
+The Zones resource provides access to several sub-resources:
+
+- **settings** - Manage zone settings (SSL, caching, security, etc.)
+- **activationCheck** - Trigger activation checks for the zone
+- **customNameservers** - Manage custom nameservers
+- **holds** - Manage zone holds
+- **subscriptions** - Manage zone subscriptions
+- **plans** - View available rate plans
+
+## Example usage
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN
+});
+
+// Create a new zone
+const zone = await client.zones.create({
+  account: { id: '023e105f4ecef8ad9ca31a8372d0c353' },
+  name: 'example.com',
+  type: 'full'
+});
+
+console.log('Zone created:', zone.id);
+console.log('Name servers:', zone.name_servers);
+
+// List all active zones
+for await (const zone of client.zones.list({ status: 'active' })) {
+  console.log(`${zone.name} - ${zone.status}`);
+}
+
+// Get zone details
+const zoneDetails = await client.zones.get({
+  zone_id: zone.id
+});
+
+// Pause a zone (DNS only)
+const pausedZone = await client.zones.edit({
+  zone_id: zone.id,
+  paused: true
+});
+
+// Update zone settings
+await client.zones.settings.edit({
+  zone_id: zone.id,
+  items: [
+    { id: 'always_use_https', value: 'on' },
+    { id: 'ssl', value: 'flexible' }
+  ]
+});
+```

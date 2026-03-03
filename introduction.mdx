@@ -1,0 +1,88 @@
+---
+title: Cloudflare TypeScript SDK
+description: Build powerful applications with type-safe access to the Cloudflare API
+---
+
+# Cloudflare TypeScript SDK
+
+The official TypeScript library for the Cloudflare API provides convenient, type-safe access to Cloudflare's REST API from server-side TypeScript or JavaScript applications.
+
+<Note>
+  This SDK requires TypeScript >= 4.5 and Node.js 18 LTS or later. It also supports Deno, Bun, Cloudflare Workers, and other modern JavaScript runtimes.
+</Note>
+
+## Why use this SDK?
+
+<CardGroup cols={2}>
+  <Card title="Type-safe SDK" icon="shield-check">
+    Full TypeScript definitions for all request parameters and response fields with autocomplete support in modern editors.
+  </Card>
+  
+  <Card title="Auto-pagination" icon="arrows-rotate">
+    Automatically fetch all pages using `for await...of` syntax or manually control pagination with convenience methods.
+  </Card>
+  
+  <Card title="Automatic retries" icon="rotate-right">
+    Built-in retry logic with exponential backoff for network errors and rate limits (2 retries by default).
+  </Card>
+  
+  <Card title="Multiple authentication methods" icon="key">
+    Support for API tokens, API key + email, and user service keys with automatic header management.
+  </Card>
+  
+  <Card title="File uploads" icon="cloud-arrow-up">
+    Upload files using multiple formats: `File`, `fs.ReadStream`, `fetch` Response, or the `toFile` helper.
+  </Card>
+  
+  <Card title="Comprehensive error handling" icon="triangle-exclamation">
+    Typed error classes for different HTTP status codes with access to status, headers, and response details.
+  </Card>
+  
+  <Card title="Multi-runtime support" icon="server">
+    Works in Node.js, Deno, Bun, browsers, Cloudflare Workers, Vercel Edge Runtime, and more.
+  </Card>
+  
+  <Card title="Custom middleware" icon="sliders">
+    Intercept requests and responses with custom fetch functions for logging, monitoring, or modifications.
+  </Card>
+</CardGroup>
+
+## Quick example
+
+Get started with just a few lines of code:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env['CLOUDFLARE_API_TOKEN'],
+});
+
+const zone = await client.zones.create({
+  account: { id: '023e105f4ecef8ad9ca31a8372d0c353' },
+  name: 'example.com',
+  type: 'full',
+});
+
+console.log(zone.id);
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install the SDK using npm, yarn, pnpm, or bun
+  </Card>
+  
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Make your first API call in under 5 minutes
+  </Card>
+  
+  <Card title="Authentication" icon="key" href="/authentication">
+    Configure API tokens and other auth methods
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="https://developers.cloudflare.com/api">
+    Explore the full Cloudflare API documentation
+  </Card>
+</CardGroup>

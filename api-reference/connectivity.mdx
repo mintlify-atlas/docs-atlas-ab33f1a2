@@ -1,0 +1,46 @@
+---
+title: 'Connectivity'
+description: 'API reference for Cloudflare Connectivity services'
+---
+
+## Overview
+
+The Connectivity API provides tools for managing network connectivity and directory services.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Directory
+
+Manage connectivity directory services.
+
+```typescript
+const directory = client.connectivity.directory;
+```
+
+The directory resource provides methods for managing connectivity configurations and directory services for network routing and resolution.
+
+### Usage
+
+Access directory-related functionality through the connectivity client:
+
+```typescript
+// Access directory services
+const directoryService = client.connectivity.directory;
+```
+
+## Use cases
+
+The Connectivity API is useful for:
+
+- Managing network directory services
+- Configuring connectivity settings
+- Maintaining network topology information
+- Coordinating routing and resolution services

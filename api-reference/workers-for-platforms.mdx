@@ -1,0 +1,150 @@
+---
+title: Workers for Platforms
+description: Build and manage SaaS platforms with Workers for Platforms
+---
+
+Workers for Platforms enables you to deploy Workers on behalf of your customers. This API provides multi-tenant isolation through dispatch namespaces.
+
+## Overview
+
+Access the Workers for Platforms API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access Workers for Platforms
+const wfp = client.workersForPlatforms;
+```
+
+## Dispatch namespaces
+
+Dispatch namespaces provide isolation between customer Workers in a multi-tenant environment.
+
+### Create a dispatch namespace
+
+Create a new namespace for isolating customer Workers.
+
+```typescript
+const namespace = await client.workersForPlatforms.dispatch.namespaces.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'customer-namespace',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Name for the dispatch namespace
+</ParamField>
+
+<ResponseField name="namespace_id" type="string">
+  The unique identifier for the namespace
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The namespace name
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  ISO 8601 timestamp when the namespace was created
+</ResponseField>
+
+### List dispatch namespaces
+
+Retrieve all dispatch namespaces in your account.
+
+```typescript
+for await (const namespace of client.workersForPlatforms.dispatch.namespaces.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(namespace);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Get a dispatch namespace
+
+Retrieve details about a specific dispatch namespace.
+
+```typescript
+const namespace = await client.workersForPlatforms.dispatch.namespaces.get(
+  'customer-namespace',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="namespace_name" type="string" required>
+  The name of the dispatch namespace
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Delete a dispatch namespace
+
+Delete a dispatch namespace and all Workers within it.
+
+```typescript
+await client.workersForPlatforms.dispatch.namespaces.delete(
+  'customer-namespace',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="namespace_name" type="string" required>
+  The name of the dispatch namespace to delete
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+## Use cases
+
+### Multi-tenant SaaS platforms
+
+Use dispatch namespaces to isolate customer code:
+
+```typescript
+// Create a namespace for each customer
+const customerNamespace = await client.workersForPlatforms.dispatch.namespaces.create({
+  account_id: accountId,
+  name: `customer-${customerId}`,
+});
+
+// Deploy customer's Worker to their namespace
+// This ensures isolation from other customers
+```
+
+### Dynamic Worker deployment
+
+Deploy Workers programmatically for your users:
+
+```typescript
+// List all customer namespaces
+const namespaces = await client.workersForPlatforms.dispatch.namespaces.list({
+  account_id: accountId,
+});
+
+// Deploy or update Workers in each namespace as needed
+for await (const namespace of namespaces) {
+  console.log(`Namespace: ${namespace.name}`);
+}
+```
+
+## Best practices
+
+1. **Namespace naming**: Use a consistent naming convention for customer namespaces (e.g., `customer-{id}`)
+2. **Isolation**: Each customer should have their own namespace to ensure security and isolation
+3. **Cleanup**: Delete namespaces when customers churn to free up resources
+4. **Monitoring**: Track namespace usage and performance per customer

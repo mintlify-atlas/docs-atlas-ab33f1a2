@@ -1,0 +1,289 @@
+---
+title: Workers
+description: Manage and deploy Cloudflare Workers
+---
+
+The Workers API allows you to create, deploy, and manage Cloudflare Workers scripts, routes, and settings.
+
+## Overview
+
+Access the Workers API through the SDK:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access workers resources
+const workers = client.workers;
+```
+
+## Scripts
+
+Manage Worker scripts and their versions.
+
+### Upload a worker script
+
+Create or update a Worker script with module syntax.
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    bindings: [
+      {
+        type: 'plain_text',
+        name: 'MESSAGE',
+        text: 'Hello World!',
+      },
+    ],
+    modules: [
+      {
+        name: 'worker.mjs',
+        content_type: 'application/javascript+module',
+        content_base64: Buffer.from(scriptContent).toString('base64'),
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="main_module" type="string" required>
+  Name of the main module file (e.g., 'worker.mjs')
+</ParamField>
+
+<ParamField path="compatibility_date" type="string" required>
+  Date in YYYY-MM-DD format for Workers runtime compatibility
+</ParamField>
+
+<ParamField path="modules" type="array" required>
+  Array of module objects containing the script code and metadata
+</ParamField>
+
+<ParamField path="bindings" type="array">
+  Environment bindings (KV, Durable Objects, secrets, etc.)
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The version ID
+</ResponseField>
+
+<ResponseField name="main_module" type="string">
+  The main module name
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  ISO 8601 timestamp when the version was created
+</ResponseField>
+
+### List worker scripts
+
+Retrieve all Worker scripts in your account.
+
+```typescript
+for await (const script of client.workers.scripts.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(script);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Get worker script
+
+Retrieve details about a specific Worker script.
+
+```typescript
+const script = await client.workers.scripts.get(
+  'my-worker',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete worker script
+
+Delete a Worker script.
+
+```typescript
+await client.workers.scripts.delete(
+  'my-worker',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Routes
+
+Manage routes that trigger your Workers.
+
+### Create a route
+
+Create a route to trigger a Worker on specific URL patterns.
+
+```typescript
+const route = await client.workers.routes.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  pattern: 'example.com/*',
+  script: 'my-worker',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="pattern" type="string" required>
+  URL pattern that triggers the Worker (e.g., 'example.com/*')
+</ParamField>
+
+<ParamField path="script" type="string">
+  Name of the Worker script to execute
+</ParamField>
+
+### List routes
+
+Retrieve all routes in a zone.
+
+```typescript
+for await (const route of client.workers.routes.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(route);
+}
+```
+
+### Update a route
+
+Modify an existing route.
+
+```typescript
+const route = await client.workers.routes.update(
+  routeId,
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    pattern: 'example.com/api/*',
+    script: 'my-api-worker',
+  }
+);
+```
+
+### Delete a route
+
+```typescript
+await client.workers.routes.delete(
+  routeId,
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Deployments
+
+Manage Worker deployments and traffic routing.
+
+### Create a deployment
+
+Deploy a Worker version with traffic percentage allocation.
+
+```typescript
+const deployment = await client.workers.scripts.deployments.create(
+  'my-worker',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    strategy: 'percentage',
+    versions: [
+      {
+        percentage: 100,
+        version_id: versionId,
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="strategy" type="string" required>
+  Deployment strategy (e.g., 'percentage')
+</ParamField>
+
+<ParamField path="versions" type="array" required>
+  Array of version objects with traffic percentage allocation
+</ParamField>
+
+## Subdomains
+
+Manage workers.dev subdomain settings.
+
+### Get subdomain
+
+Retrieve the workers.dev subdomain for your account.
+
+```typescript
+const subdomain = await client.workers.subdomains.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Update subdomain
+
+Configure the workers.dev subdomain.
+
+```typescript
+const subdomain = await client.workers.subdomains.update({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  subdomain: 'my-subdomain',
+});
+```
+
+## Domains
+
+Manage custom domains for Workers.
+
+### List domains
+
+```typescript
+for await (const domain of client.workers.domains.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(domain);
+}
+```
+
+### Get domain
+
+```typescript
+const domain = await client.workers.domains.get(
+  domainId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Account settings
+
+Manage account-level Worker settings.
+
+### Get account settings
+
+```typescript
+const settings = await client.workers.accountSettings.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Update account settings
+
+```typescript
+const settings = await client.workers.accountSettings.update({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  default_usage_model: 'bundled',
+});
+```

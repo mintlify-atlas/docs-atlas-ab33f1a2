@@ -1,0 +1,120 @@
+---
+title: TypeScript types
+description: Import and use TypeScript types for requests and responses
+---
+
+This library includes TypeScript definitions for all request params and response fields. You may import and use them for type-safe API interactions.
+
+## Importing types
+
+All types are available as named exports from the main `cloudflare` package:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env['CLOUDFLARE_API_TOKEN'],
+});
+
+const params: Cloudflare.ZoneCreateParams = {
+  account: { id: '023e105f4ecef8ad9ca31a8372d0c353' },
+  name: 'example.com',
+  type: 'full',
+};
+
+const zone: Cloudflare.Zone = await client.zones.create(params);
+```
+
+<Tip>
+Documentation for each method, request param, and response field are available in docstrings and will appear on hover in most modern editors.
+</Tip>
+
+## Request parameter types
+
+Request parameter types follow the naming convention `[Resource][Method]Params`:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+// Zone creation parameters
+type CreateParams = Cloudflare.ZoneCreateParams;
+
+// Zone update parameters
+type UpdateParams = Cloudflare.ZoneUpdateParams;
+
+// Zone list parameters
+type ListParams = Cloudflare.ZoneListParams;
+```
+
+## Response types
+
+Response types are named after the resource they represent:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+const zone: Cloudflare.Zone = await client.zones.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+console.log(zone.id); // Type-safe property access
+console.log(zone.name);
+console.log(zone.status);
+```
+
+## Type safety benefits
+
+Using TypeScript types provides several benefits:
+
+<CardGroup cols={2}>
+  <Card title="Autocomplete" icon="wand-magic-sparkles">
+    Get intelligent code completion for all API methods and parameters
+  </Card>
+  <Card title="Compile-time checking" icon="shield-check">
+    Catch errors before runtime with TypeScript's type checker
+  </Card>
+  <Card title="Documentation" icon="book">
+    See inline documentation for parameters and return types
+  </Card>
+  <Card title="Refactoring" icon="code">
+    Safely refactor code with confidence in type correctness
+  </Card>
+</CardGroup>
+
+## Partial types
+
+You can use TypeScript's utility types to create partial or custom types:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+// Only require certain fields
+type MinimalZone = Pick<Cloudflare.Zone, 'id' | 'name'>;
+
+// Make all fields optional
+type PartialZoneParams = Partial<Cloudflare.ZoneCreateParams>;
+
+// Extend existing types
+interface ExtendedZone extends Cloudflare.Zone {
+  customField: string;
+}
+```
+
+## Generic types
+
+The library also exports common types used across the API:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+type ASN = Cloudflare.ASN;
+type Identifier = Cloudflare.Identifier;
+type Member = Cloudflare.Member;
+type Permission = Cloudflare.Permission;
+type Role = Cloudflare.Role;
+type ResponseInfo = Cloudflare.ResponseInfo;
+```
+
+<Note>
+All types are automatically generated from the Cloudflare OpenAPI specification and are kept up-to-date with the latest API changes.
+</Note>

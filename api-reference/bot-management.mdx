@@ -1,0 +1,303 @@
+---
+title: Bot Management
+description: Advanced bot detection and mitigation for your applications
+---
+
+The Bot Management API allows you to configure bot detection and mitigation settings for your zones. It supports Bot Fight Mode, Super Bot Fight Mode, and Bot Management for Enterprise with advanced ML-based bot detection.
+
+## Initialize the Bot Management resource
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+const botManagement = client.botManagement;
+```
+
+## Configuration management
+
+### Get configuration
+
+Retrieve the current Bot Management configuration for a zone.
+
+```typescript
+const config = await client.botManagement.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Update configuration
+
+Update Bot Management settings for a zone.
+
+```typescript
+const config = await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  ai_bots_protection: 'block',
+  cf_robots_variant: 'policy_only',
+  crawler_protection: 'enabled',
+  enable_js: true,
+  fight_mode: false,
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField body="ai_bots_protection" type="string">
+  Enable rule to block AI Scrapers and Crawlers. Options:
+  - `block` - Block AI scrapers and crawlers
+  - `disabled` - Allow AI scrapers and crawlers
+  - `only_on_ad_pages` - Block only on ad pages (not available for Enterprise)
+</ParamField>
+
+<ParamField body="cf_robots_variant" type="string">
+  Specifies the Robots Access Control License variant to use. Options:
+  - `off` - Disable robots.txt management
+  - `policy_only` - Use policy-based robots.txt
+</ParamField>
+
+<ParamField body="crawler_protection" type="string">
+  Enable rule to punish AI Scrapers and Crawlers via a link maze. Options:
+  - `enabled` - Enable crawler protection
+  - `disabled` - Disable crawler protection
+</ParamField>
+
+<ParamField body="enable_js" type="boolean">
+  Use lightweight, invisible JavaScript detections to improve Bot Management. [Learn more about JavaScript Detections](https://developers.cloudflare.com/bots/reference/javascript-detections/).
+</ParamField>
+
+<ParamField body="fight_mode" type="boolean">
+  Whether to enable Bot Fight Mode
+</ParamField>
+
+<ParamField body="is_robots_txt_managed" type="boolean">
+  Enable cloudflare managed robots.txt. If an existing robots.txt is detected, then managed robots.txt will be prepended to the existing robots.txt.
+</ParamField>
+
+## Bot Fight Mode configuration
+
+Bot Fight Mode is a basic bot protection plan suitable for smaller sites.
+
+```typescript
+const config = await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  fight_mode: true,
+  enable_js: true,
+  ai_bots_protection: 'block',
+});
+```
+
+## Super Bot Fight Mode configuration
+
+Super Bot Fight Mode provides enhanced bot protection with more granular control.
+
+### Super Bot Fight Mode - Definitely automated
+
+```typescript
+const config = await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  sbfm_definitely_automated: 'managed_challenge',
+  sbfm_verified_bots: 'allow',
+  sbfm_static_resource_protection: false,
+  optimize_wordpress: true,
+});
+```
+
+<ParamField body="sbfm_definitely_automated" type="string">
+  Action to take on definitely automated requests. Options:
+  - `allow` - Allow the request
+  - `block` - Block the request
+  - `managed_challenge` - Issue a managed challenge
+</ParamField>
+
+<ParamField body="sbfm_verified_bots" type="string">
+  Action to take on verified bot requests. Options:
+  - `allow` - Allow verified bots
+  - `block` - Block verified bots
+</ParamField>
+
+<ParamField body="sbfm_static_resource_protection" type="boolean">
+  Enable static resource protection. Enable if static resources on your application need bot protection. Note: This can also result in legitimate traffic being blocked.
+</ParamField>
+
+<ParamField body="optimize_wordpress" type="boolean">
+  Whether to optimize Super Bot Fight Mode protections for WordPress
+</ParamField>
+
+### Super Bot Fight Mode - Likely automated
+
+```typescript
+const config = await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  sbfm_definitely_automated: 'managed_challenge',
+  sbfm_likely_automated: 'managed_challenge',
+  sbfm_verified_bots: 'allow',
+  sbfm_static_resource_protection: false,
+});
+```
+
+<ParamField body="sbfm_likely_automated" type="string">
+  Action to take on likely automated requests. Options:
+  - `allow` - Allow the request
+  - `block` - Block the request
+  - `managed_challenge` - Issue a managed challenge
+</ParamField>
+
+## Bot Management for Enterprise configuration
+
+Enterprise Bot Management provides the most advanced bot detection using machine learning.
+
+```typescript
+const config = await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  auto_update_model: true,
+  bm_cookie_enabled: true,
+  enable_js: true,
+  suppress_session_score: false,
+  ai_bots_protection: 'block',
+});
+```
+
+<ParamField body="auto_update_model" type="boolean">
+  Automatically update to the newest bot detection models created by Cloudflare as they are released. [Learn more](https://developers.cloudflare.com/bots/reference/machine-learning-models#model-versions-and-release-notes).
+</ParamField>
+
+<ParamField body="bm_cookie_enabled" type="boolean">
+  Indicates that the bot management cookie can be placed on end user devices accessing the site. Defaults to true.
+</ParamField>
+
+<ParamField body="suppress_session_score" type="boolean">
+  Whether to disable tracking the highest bot score for a session in the Bot Management cookie
+</ParamField>
+
+## Cleaning up configuration after plan changes
+
+When upgrading or downgrading your bot management plan, you may need to clean up old configurations.
+
+### Clean up for Bot Fight Mode
+
+```typescript
+await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  sbfm_likely_automated: 'allow',
+  sbfm_definitely_automated: 'allow',
+  sbfm_verified_bots: 'allow',
+  sbfm_static_resource_protection: false,
+  optimize_wordpress: false,
+  suppress_session_score: false,
+});
+```
+
+### Clean up for Super Bot Fight Mode Pro
+
+```typescript
+await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  sbfm_likely_automated: 'allow',
+  fight_mode: false,
+});
+```
+
+### Clean up for Super Bot Fight Mode Business
+
+```typescript
+await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  fight_mode: false,
+});
+```
+
+### Clean up for Bot Management Enterprise
+
+<Warning>
+Ensure you have [custom rules](https://developers.cloudflare.com/waf/custom-rules/) in place to protect your zone before disabling SBFM rules. Without these protections, your zone is vulnerable to attacks.
+</Warning>
+
+```typescript
+await client.botManagement.update({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  sbfm_likely_automated: 'allow',
+  sbfm_definitely_automated: 'allow',
+  sbfm_verified_bots: 'allow',
+  sbfm_static_resource_protection: false,
+  optimize_wordpress: false,
+  fight_mode: false,
+});
+```
+
+## Response types
+
+### BotFightModeConfiguration
+
+Configuration for Bot Fight Mode.
+
+<ResponseField name="fight_mode" type="boolean">
+  Whether Bot Fight Mode is enabled
+</ResponseField>
+
+<ResponseField name="enable_js" type="boolean">
+  Whether JavaScript detections are enabled
+</ResponseField>
+
+<ResponseField name="ai_bots_protection" type="string">
+  AI bots protection setting
+</ResponseField>
+
+<ResponseField name="cf_robots_variant" type="string">
+  Robots Access Control License variant
+</ResponseField>
+
+<ResponseField name="crawler_protection" type="string">
+  Crawler protection setting
+</ResponseField>
+
+<ResponseField name="is_robots_txt_managed" type="boolean">
+  Whether robots.txt is managed by Cloudflare
+</ResponseField>
+
+<ResponseField name="using_latest_model" type="boolean">
+  Whether the zone is using the latest ML model
+</ResponseField>
+
+<ResponseField name="stale_zone_configuration" type="object">
+  Unauthorized settings currently active on the zone (typically from upgrades/downgrades)
+</ResponseField>
+
+### SubscriptionConfiguration
+
+Configuration for Enterprise Bot Management subscription.
+
+<ResponseField name="auto_update_model" type="boolean">
+  Whether automatic model updates are enabled
+</ResponseField>
+
+<ResponseField name="bm_cookie_enabled" type="boolean">
+  Whether the bot management cookie is enabled
+</ResponseField>
+
+<ResponseField name="suppress_session_score" type="boolean">
+  Whether session score tracking is suppressed
+</ResponseField>
+
+<ResponseField name="enable_js" type="boolean">
+  Whether JavaScript detections are enabled
+</ResponseField>
+
+<ResponseField name="ai_bots_protection" type="string">
+  AI bots protection setting
+</ResponseField>
+
+<ResponseField name="using_latest_model" type="boolean">
+  Whether the zone is using the latest ML model
+</ResponseField>
+
+## Related resources
+
+- [Turnstile](/api-reference/turnstile)
+- [Security Center](/api-reference/security-center)
+- [Bot Plans](https://developers.cloudflare.com/bots/plans/)

@@ -1,0 +1,326 @@
+---
+title: SSL/TLS
+description: Manage SSL/TLS certificates and settings for your zones
+---
+
+The SSL resource provides methods to manage SSL/TLS certificates, certificate packs, verification, and recommendations for your Cloudflare zones.
+
+## Certificate packs
+
+### create
+
+Order a new certificate pack.
+
+```typescript
+const certificatePack = await client.ssl.certificatePacks.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  type: 'advanced',
+  hosts: ['example.com', '*.example.com'],
+  validation_method: 'txt',
+  validity_days: 90,
+  certificate_authority: 'lets_encrypt'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="type" type="'advanced'" required>
+  Certificate pack type
+</ParamField>
+
+<ParamField path="hosts" type="string[]" required>
+  Comma-separated list of hostnames (e.g., ['example.com', '*.example.com'])
+</ParamField>
+
+<ParamField path="validation_method" type="'txt' | 'http' | 'email'" required>
+  Validation method for the certificate
+</ParamField>
+
+<ParamField path="validity_days" type="number" required>
+  Certificate validity period (14, 30, 90, or 365 days)
+</ParamField>
+
+<ParamField path="certificate_authority" type="'digicert' | 'google' | 'lets_encrypt'" required>
+  Certificate authority to use
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Certificate pack identifier
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Certificate pack type
+</ResponseField>
+
+<ResponseField name="hosts" type="string[]">
+  List of hostnames covered by the certificate
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Certificate status (e.g., 'initializing', 'pending_validation', 'active')
+</ResponseField>
+
+<ResponseField name="validation_method" type="string">
+  Validation method used
+</ResponseField>
+
+<ResponseField name="validity_days" type="number">
+  Certificate validity period in days
+</ResponseField>
+
+### list
+
+List all certificate packs for a zone.
+
+```typescript
+for await (const pack of client.ssl.certificatePacks.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+})) {
+  console.log(`${pack.id}: ${pack.status}`);
+}
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="status" type="string">
+  Filter by certificate status
+</ParamField>
+
+### delete
+
+Delete a certificate pack.
+
+```typescript
+const result = await client.ssl.certificatePacks.delete(
+  'advanced_cert_123',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="certificate_pack_id" type="string" required>
+  Certificate pack identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### get
+
+Get details for a specific certificate pack.
+
+```typescript
+const pack = await client.ssl.certificatePacks.get(
+  'advanced_cert_123',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="certificate_pack_id" type="string" required>
+  Certificate pack identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+## SSL verification
+
+### get
+
+Get SSL verification status for all certificate packs.
+
+```typescript
+const verification = await client.ssl.verification.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### edit
+
+Edit SSL verification method for a certificate pack.
+
+```typescript
+const result = await client.ssl.verification.edit(
+  'advanced_cert_123',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    validation_method: 'http'
+  }
+);
+```
+
+<ParamField path="certificate_pack_id" type="string" required>
+  Certificate pack identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="validation_method" type="'txt' | 'http' | 'email'" required>
+  New validation method
+</ParamField>
+
+## SSL recommendations
+
+### get
+
+Get SSL/TLS recommendations for a zone.
+
+```typescript
+const recommendation = await client.ssl.recommendations.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Recommendation identifier
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether SSL/TLS recommendation is enabled
+</ResponseField>
+
+## Universal SSL
+
+### settings.get
+
+Get Universal SSL settings for a zone.
+
+```typescript
+const settings = await client.ssl.universal.settings.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+### settings.edit
+
+Edit Universal SSL settings.
+
+```typescript
+const settings = await client.ssl.universal.settings.edit({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  enabled: true
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="enabled" type="boolean" required>
+  Whether to enable Universal SSL
+</ParamField>
+
+## SSL analysis
+
+### create
+
+Analyze SSL/TLS configuration for a hostname.
+
+```typescript
+const analysis = await client.ssl.analyze.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  host: 'example.com'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="host" type="string" required>
+  Hostname to analyze
+</ParamField>
+
+## Validation methods
+
+Cloudflare supports three validation methods for SSL certificates:
+
+- **txt** - DNS TXT record validation (most common)
+- **http** - HTTP file validation
+- **email** - Email validation to domain contacts
+
+## Certificate authorities
+
+Cloudflare supports the following certificate authorities:
+
+- **lets_encrypt** - Let's Encrypt (free, automated)
+- **google** - Google Trust Services
+- **digicert** - DigiCert (Enterprise only)
+
+## Example usage
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN
+});
+
+const zoneId = '023e105f4ecef8ad9ca31a8372d0c353';
+
+// Order a new advanced certificate
+const cert = await client.ssl.certificatePacks.create({
+  zone_id: zoneId,
+  type: 'advanced',
+  hosts: ['example.com', '*.example.com', 'www.example.com'],
+  validation_method: 'txt',
+  validity_days: 90,
+  certificate_authority: 'lets_encrypt'
+});
+
+console.log('Certificate ordered:', cert.id);
+console.log('Status:', cert.status);
+
+// Check verification status
+const verification = await client.ssl.verification.get({
+  zone_id: zoneId
+});
+
+console.log('Verification records:', verification);
+
+// List all certificates
+for await (const pack of client.ssl.certificatePacks.list({
+  zone_id: zoneId
+})) {
+  console.log(`Certificate ${pack.id}:`);
+  console.log(`  Hosts: ${pack.hosts.join(', ')}`);
+  console.log(`  Status: ${pack.status}`);
+  console.log(`  Valid for: ${pack.validity_days} days`);
+}
+
+// Get SSL recommendations
+const recommendation = await client.ssl.recommendations.get({
+  zone_id: zoneId
+});
+
+console.log('SSL Recommendation enabled:', recommendation.enabled);
+
+// Enable Universal SSL
+await client.ssl.universal.settings.edit({
+  zone_id: zoneId,
+  enabled: true
+});
+
+// Analyze SSL configuration
+const analysis = await client.ssl.analyze.create({
+  zone_id: zoneId,
+  host: 'example.com'
+});
+
+console.log('SSL Analysis:', analysis);
+```

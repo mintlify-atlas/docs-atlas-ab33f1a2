@@ -1,0 +1,243 @@
+---
+title: Durable Objects
+description: Access stateful, coordinated objects with strong consistency
+---
+
+Durable Objects provide low-latency coordination and consistent storage for the Workers platform. Use the API to manage Durable Object namespaces.
+
+## Overview
+
+Access the Durable Objects API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access Durable Objects resources
+const durableObjects = client.durableObjects;
+```
+
+## Namespaces
+
+Durable Object namespaces are containers for Durable Object instances.
+
+### List namespaces
+
+Retrieve all Durable Object namespaces in your account.
+
+```typescript
+for await (const namespace of client.durableObjects.namespaces.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(namespace);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number for pagination
+</ParamField>
+
+<ParamField path="per_page" type="number">
+  Number of namespaces per page (default: 20, max: 100)
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The namespace ID
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The namespace name
+</ResponseField>
+
+<ResponseField name="script" type="string">
+  The Worker script that defines the Durable Object class
+</ResponseField>
+
+<ResponseField name="class" type="string">
+  The exported class name in the Worker script
+</ResponseField>
+
+## Creating Durable Objects
+
+Durable Objects are created through Worker bindings. You define the class in your Worker script and bind it using migrations.
+
+### Example: Define a Durable Object class
+
+In your Worker script:
+
+```typescript
+export class Counter {
+  constructor(state, env) {
+    this.state = state;
+  }
+
+  async fetch(request) {
+    let value = (await this.state.storage.get('value')) || 0;
+    value++;
+    await this.state.storage.put('value', value);
+    return new Response(value.toString());
+  }
+}
+```
+
+### Example: Configure bindings
+
+When deploying your Worker, configure Durable Object bindings:
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    bindings: [
+      {
+        type: 'durable_object_namespace',
+        name: 'COUNTER',
+        class_name: 'Counter',
+        script_name: 'my-worker',
+      },
+    ],
+    modules: [
+      {
+        name: 'worker.mjs',
+        content_type: 'application/javascript+module',
+        content_base64: Buffer.from(scriptContent).toString('base64'),
+      },
+    ],
+  }
+);
+```
+
+<ParamField path="type" type="string" required>
+  Set to 'durable_object_namespace'
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  The binding name (accessible as env.COUNTER in your Worker)
+</ParamField>
+
+<ParamField path="class_name" type="string" required>
+  The exported Durable Object class name
+</ParamField>
+
+<ParamField path="script_name" type="string">
+  The Worker script that exports the class (defaults to current script)
+</ParamField>
+
+## Migrations
+
+When deploying Workers with Durable Objects, you need to specify migrations to create, rename, or delete Durable Object classes.
+
+### Example: Create a new Durable Object class
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    migrations: {
+      new_classes: ['Counter'],
+    },
+    bindings: [
+      {
+        type: 'durable_object_namespace',
+        name: 'COUNTER',
+        class_name: 'Counter',
+      },
+    ],
+    modules: [...],
+  }
+);
+```
+
+<ParamField path="new_classes" type="array">
+  Array of class names to create
+</ParamField>
+
+<ParamField path="renamed_classes" type="array">
+  Array of objects with 'from' and 'to' properties for renaming classes
+</ParamField>
+
+<ParamField path="deleted_classes" type="array">
+  Array of class names to delete
+</ParamField>
+
+<ParamField path="new_sqlite_classes" type="array">
+  Array of class names to create with SQLite storage
+</ParamField>
+
+### Example: Rename a Durable Object class
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    migrations: {
+      renamed_classes: [
+        {
+          from: 'Counter',
+          to: 'CounterV2',
+        },
+      ],
+    },
+    bindings: [...],
+    modules: [...],
+  }
+);
+```
+
+## Using Durable Objects in Workers
+
+Once configured, access Durable Objects from your Worker:
+
+```typescript
+export default {
+  async fetch(request, env) {
+    // Get a Durable Object ID
+    const id = env.COUNTER.idFromName('global-counter');
+    
+    // Get the Durable Object stub
+    const stub = env.COUNTER.get(id);
+    
+    // Send a request to the Durable Object
+    const response = await stub.fetch(request);
+    
+    return response;
+  },
+};
+
+export class Counter {
+  constructor(state, env) {
+    this.state = state;
+  }
+
+  async fetch(request) {
+    let value = (await this.state.storage.get('value')) || 0;
+    value++;
+    await this.state.storage.put('value', value);
+    return new Response(value.toString());
+  }
+}
+```
+
+## Best practices
+
+1. **Unique IDs**: Use `idFromName()` for deterministic IDs or `newUniqueId()` for random IDs
+2. **State management**: Use `state.storage` for persistent data with strong consistency
+3. **Concurrency**: Durable Objects handle one request at a time, ensuring strong consistency
+4. **Migrations**: Always specify migrations when adding, renaming, or removing Durable Object classes
+5. **SQLite storage**: Use `new_sqlite_classes` for SQL-based storage in Durable Objects

@@ -1,0 +1,131 @@
+---
+title: Accessing raw responses
+description: Use .asResponse() and .withResponse() to access the underlying fetch Response object
+---
+
+The raw `Response` returned by `fetch()` can be accessed through the `.asResponse()` method on the `APIPromise` type that all methods return.
+
+You can also use the `.withResponse()` method to get the raw `Response` along with the parsed data.
+
+## Using .asResponse()
+
+The `.asResponse()` method returns the raw `Response` object without parsing the body:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare();
+
+const response = await client.zones
+  .create({ account: { id: '023e105f4ecef8ad9ca31a8372d0c353' }, name: 'example.com', type: 'full' })
+  .asResponse();
+
+console.log(response.headers.get('X-My-Header'));
+console.log(response.statusText);
+```
+
+<Tip>
+Use `.asResponse()` when you need to access headers, status codes, or other response metadata.
+</Tip>
+
+## Using .withResponse()
+
+The `.withResponse()` method returns both the parsed data and the raw `Response` object:
+
+```ts
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare();
+
+const { data: zone, response: raw } = await client.zones
+  .create({ account: { id: '023e105f4ecef8ad9ca31a8372d0c353' }, name: 'example.com', type: 'full' })
+  .withResponse();
+
+console.log(raw.headers.get('X-My-Header'));
+console.log(zone.id);
+```
+
+<Note>
+`.withResponse()` is useful when you need both the parsed data and response metadata.
+</Note>
+
+## Common use cases
+
+### Accessing response headers
+
+Response headers contain useful metadata like rate limits and request IDs:
+
+```ts
+const { data: zones, response } = await client.zones.list().withResponse();
+
+console.log('Rate limit remaining:', response.headers.get('x-ratelimit-remaining'));
+console.log('Request ID:', response.headers.get('cf-ray'));
+console.log('Content type:', response.headers.get('content-type'));
+```
+
+### Checking status codes
+
+Access the HTTP status code and status text:
+
+```ts
+const response = await client.zones
+  .get({ zone_id: '023e105f4ecef8ad9ca31a8372d0c353' })
+  .asResponse();
+
+console.log('Status:', response.status);
+console.log('Status text:', response.statusText);
+console.log('OK:', response.ok);
+```
+
+### Inspecting response timing
+
+You can measure request duration by tracking timestamps:
+
+```ts
+const startTime = Date.now();
+const response = await client.zones.list().asResponse();
+const duration = Date.now() - startTime;
+
+console.log(`Request took ${duration}ms`);
+```
+
+## Response headers reference
+
+Common Cloudflare API response headers:
+
+<ResponseField name="cf-ray" type="string">
+  Unique request identifier for debugging
+</ResponseField>
+
+<ResponseField name="x-ratelimit-remaining" type="number">
+  Number of requests remaining in the current rate limit window
+</ResponseField>
+
+<ResponseField name="x-ratelimit-reset" type="timestamp">
+  Unix timestamp when the rate limit window resets
+</ResponseField>
+
+<ResponseField name="x-ratelimit-limit" type="number">
+  Total number of requests allowed in the rate limit window
+</ResponseField>
+
+## Working with pagination
+
+Access pagination metadata from response headers:
+
+```ts
+const { data: accounts, response } = await client.accounts
+  .list()
+  .withResponse();
+
+// Check if there are more pages
+const hasMore = response.headers.get('x-pagination-has-more');
+const cursor = response.headers.get('x-pagination-cursor');
+
+console.log('Has more pages:', hasMore);
+console.log('Next cursor:', cursor);
+```
+
+<Warning>
+Pagination header names may vary by endpoint. Check the specific API documentation for details.
+</Warning>

@@ -1,0 +1,358 @@
+---
+title: DNS Records
+description: Manage DNS records for your Cloudflare zones
+---
+
+The DNS Records resource provides methods to manage DNS records for zones, including creating, updating, listing, and deleting records.
+
+## Main methods
+
+### create
+
+Create a new DNS record for a zone.
+
+```typescript
+const record = await client.dns.records.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  type: 'A',
+  name: 'example.com',
+  content: '192.0.2.1',
+  ttl: 3600,
+  proxied: true
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="type" type="string" required>
+  DNS record type (e.g., 'A', 'AAAA', 'CNAME', 'MX', 'TXT', 'SRV', etc.)
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  DNS record name (e.g., 'example.com' or 'subdomain.example.com')
+</ParamField>
+
+<ParamField path="content" type="string">
+  DNS record content (varies by record type)
+</ParamField>
+
+<ParamField path="ttl" type="number">
+  Time to live, in seconds. Use 1 for automatic (defaults to auto)
+</ParamField>
+
+<ParamField path="proxied" type="boolean">
+  Whether the record is receiving Cloudflare's performance and security benefits (only applicable to A, AAAA, and CNAME records)
+</ParamField>
+
+<ParamField path="priority" type="number">
+  Record priority (required for MX and SRV records)
+</ParamField>
+
+<ResponseField name="id" type="string">
+  DNS record identifier
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Record type
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  DNS record name
+</ResponseField>
+
+<ResponseField name="content" type="string">
+  DNS record content
+</ResponseField>
+
+<ResponseField name="proxied" type="boolean">
+  Whether the record is proxied through Cloudflare
+</ResponseField>
+
+<ResponseField name="ttl" type="number">
+  Time to live in seconds
+</ResponseField>
+
+<ResponseField name="locked" type="boolean">
+  Whether the record is locked from editing
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  When the record was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  When the record was last modified
+</ResponseField>
+
+### update
+
+Overwrite an existing DNS record.
+
+```typescript
+const record = await client.dns.records.update(
+  '372e67954025e0ba6aaa6d586b9e0b59',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    type: 'A',
+    name: 'example.com',
+    content: '192.0.2.2',
+    ttl: 3600
+  }
+);
+```
+
+<ParamField path="dns_record_id" type="string" required>
+  DNS record identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="type" type="string" required>
+  DNS record type
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  DNS record name
+</ParamField>
+
+<ParamField path="content" type="string">
+  DNS record content
+</ParamField>
+
+<ParamField path="ttl" type="number">
+  Time to live in seconds
+</ParamField>
+
+### list
+
+List, search, sort, and filter a zone's DNS records.
+
+```typescript
+// List all records
+for await (const record of client.dns.records.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+})) {
+  console.log(`${record.name} -> ${record.content}`);
+}
+
+// Filter by type
+for await (const record of client.dns.records.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  type: 'A'
+})) {
+  console.log(record);
+}
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="type" type="string">
+  Filter by DNS record type
+</ParamField>
+
+<ParamField path="name" type="string">
+  Filter by DNS record name
+</ParamField>
+
+<ParamField path="content" type="string">
+  Filter by DNS record content
+</ParamField>
+
+<ParamField path="proxied" type="boolean">
+  Filter by proxy status
+</ParamField>
+
+<ParamField path="order" type="'type' | 'name' | 'content' | 'ttl' | 'proxied'">
+  Field to order records by
+</ParamField>
+
+<ParamField path="direction" type="'asc' | 'desc'">
+  Direction to order records
+</ParamField>
+
+### delete
+
+Delete a DNS record.
+
+```typescript
+const result = await client.dns.records.delete(
+  '372e67954025e0ba6aaa6d586b9e0b59',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="dns_record_id" type="string" required>
+  DNS record identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### get
+
+Get DNS record details.
+
+```typescript
+const record = await client.dns.records.get(
+  '372e67954025e0ba6aaa6d586b9e0b59',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="dns_record_id" type="string" required>
+  DNS record identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+## Additional methods
+
+### edit
+
+Update an existing DNS record (partial update).
+
+```typescript
+const record = await client.dns.records.edit(
+  '372e67954025e0ba6aaa6d586b9e0b59',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    proxied: false
+  }
+);
+```
+
+### batch
+
+Send a batch of DNS record API calls to be executed together.
+
+```typescript
+const result = await client.dns.records.batch({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  posts: [
+    {
+      type: 'A',
+      name: 'example.com',
+      content: '192.0.2.1'
+    }
+  ],
+  patches: [
+    {
+      id: '372e67954025e0ba6aaa6d586b9e0b59',
+      proxied: true
+    }
+  ]
+});
+```
+
+### import
+
+Import DNS records from a BIND config file.
+
+```typescript
+const result = await client.dns.records.import({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  file: 'www.example.com. 300 IN A 127.0.0.1'
+});
+```
+
+### export
+
+Export DNS records in BIND config format.
+
+```typescript
+const bindConfig = await client.dns.records.export({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+## Record types
+
+Common DNS record types include:
+
+- **A** - Maps a domain to an IPv4 address
+- **AAAA** - Maps a domain to an IPv6 address
+- **CNAME** - Creates an alias for another domain
+- **MX** - Specifies mail servers for the domain
+- **TXT** - Stores text information
+- **SRV** - Defines service locations
+- **NS** - Delegates a subdomain to different nameservers
+- **CAA** - Specifies which certificate authorities can issue certificates
+- **PTR** - Reverse DNS lookup
+- **HTTPS** - HTTPS service binding
+- **SVCB** - Service binding
+
+## Important notes
+
+- A/AAAA records cannot exist on the same name as CNAME records
+- NS records cannot exist on the same name as any other record type
+- Domain names are always represented in Punycode, even if Unicode characters were used
+- Use `ttl: 1` for automatic TTL (Cloudflare manages it)
+- Only A, AAAA, and CNAME records support the `proxied` option
+
+## Example usage
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN
+});
+
+const zoneId = '023e105f4ecef8ad9ca31a8372d0c353';
+
+// Create an A record with proxy enabled
+const aRecord = await client.dns.records.create({
+  zone_id: zoneId,
+  type: 'A',
+  name: 'example.com',
+  content: '192.0.2.1',
+  ttl: 1, // Auto
+  proxied: true
+});
+
+// Create a CNAME record
+const cnameRecord = await client.dns.records.create({
+  zone_id: zoneId,
+  type: 'CNAME',
+  name: 'www',
+  content: 'example.com',
+  proxied: true
+});
+
+// Create an MX record
+const mxRecord = await client.dns.records.create({
+  zone_id: zoneId,
+  type: 'MX',
+  name: 'example.com',
+  content: 'mail.example.com',
+  priority: 10
+});
+
+// List all A records
+for await (const record of client.dns.records.list({
+  zone_id: zoneId,
+  type: 'A'
+})) {
+  console.log(`${record.name}: ${record.content} (proxied: ${record.proxied})`);
+}
+
+// Update a record to disable proxy
+await client.dns.records.edit(aRecord.id, {
+  zone_id: zoneId,
+  proxied: false
+});
+
+// Delete a record
+await client.dns.records.delete(cnameRecord.id, {
+  zone_id: zoneId
+});
+```

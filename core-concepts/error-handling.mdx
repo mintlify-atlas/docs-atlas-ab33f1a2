@@ -1,0 +1,265 @@
+---
+title: Error handling
+description: Understand error types and implement robust error handling strategies
+---
+
+The Cloudflare SDK provides a comprehensive error hierarchy for handling different failure scenarios.
+
+## Error types
+
+When the SDK cannot connect to the API or receives a non-success status code (4xx or 5xx), it throws a subclass of `APIError`:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare();
+
+try {
+  const zone = await client.zones.get({ zone_id: '023e105f4ecef8ad9ca31a8372d0c353' });
+} catch (err) {
+  if (err instanceof Cloudflare.APIError) {
+    console.log(err.status);  // 400
+    console.log(err.name);    // BadRequestError
+    console.log(err.headers); // {server: 'nginx', ...}
+  } else {
+    throw err;
+  }
+}
+```
+
+## Error hierarchy
+
+<Steps>
+  <Step title="CloudflareError">
+    Base error class for all SDK errors.
+    
+    ```typescript
+    export class CloudflareError extends Error {}
+    ```
+  </Step>
+  
+  <Step title="APIError">
+    Extended error with HTTP status, headers, and response body.
+    
+    ```typescript
+    export class APIError extends CloudflareError {
+      readonly status: number | undefined;
+      readonly headers: Headers | undefined;
+      readonly error: Object | undefined;
+      readonly errors: Array<ErrorData>;
+    }
+    ```
+  </Step>
+  
+  <Step title="Specific Error Types">
+    Status-code-specific error classes for targeted handling.
+  </Step>
+</Steps>
+
+## HTTP status code errors
+
+| Status Code | Error Class | Description |
+|-------------|-------------|-------------|
+| 400 | `BadRequestError` | Invalid request parameters |
+| 401 | `AuthenticationError` | Invalid or missing authentication |
+| 403 | `PermissionDeniedError` | Insufficient permissions |
+| 404 | `NotFoundError` | Resource not found |
+| 409 | `ConflictError` | Request conflicts with current state |
+| 422 | `UnprocessableEntityError` | Validation error |
+| 429 | `RateLimitError` | Rate limit exceeded |
+| ≥500 | `InternalServerError` | Server-side error |
+| N/A | `APIConnectionError` | Network connectivity issue |
+
+## Connection errors
+
+Connection-related errors inherit from `APIConnectionError`:
+
+<CodeGroup>
+```typescript APIConnectionError
+// Network connectivity problems
+export class APIConnectionError extends APIError {
+  constructor({ message, cause }: {
+    message?: string | undefined;
+    cause?: Error | undefined;
+  });
+}
+```
+
+```typescript APIConnectionTimeoutError
+// Request timeout
+export class APIConnectionTimeoutError extends APIConnectionError {
+  constructor({ message }: { message?: string });
+}
+```
+
+```typescript APIUserAbortError
+// User-initiated abort
+export class APIUserAbortError extends APIError {
+  constructor({ message }: { message?: string });
+}
+```
+</CodeGroup>
+
+## Handling specific errors
+
+Catch and handle different error types:
+
+```typescript
+try {
+  const zone = await client.zones.create({
+    account: { id: '023e105f4ecef8ad9ca31a8372d0c353' },
+    name: 'example.com',
+    type: 'full',
+  });
+} catch (err) {
+  if (err instanceof Cloudflare.AuthenticationError) {
+    console.error('Invalid API token');
+    // Prompt user to update credentials
+  } else if (err instanceof Cloudflare.RateLimitError) {
+    console.error('Rate limit exceeded');
+    // Wait before retrying
+  } else if (err instanceof Cloudflare.NotFoundError) {
+    console.error('Resource not found');
+    // Handle missing resource
+  } else if (err instanceof Cloudflare.APIConnectionTimeoutError) {
+    console.error('Request timed out');
+    // Retry with longer timeout
+  } else if (err instanceof Cloudflare.APIError) {
+    console.error(`API error: ${err.status}`, err.error);
+  } else {
+    throw err;
+  }
+}
+```
+
+## Accessing error details
+
+The `APIError` class provides detailed information:
+
+```typescript
+try {
+  await client.zones.get({ zone_id: 'invalid-id' });
+} catch (err) {
+  if (err instanceof Cloudflare.APIError) {
+    // HTTP status code
+    console.log('Status:', err.status);
+    
+    // Response headers
+    console.log('Headers:', err.headers);
+    
+    // Error response body
+    console.log('Error:', err.error);
+    
+    // Cloudflare error array
+    console.log('Errors:', err.errors);
+    // [{ code: 1000, message: 'Invalid zone ID' }]
+    
+    // Error message
+    console.log('Message:', err.message);
+  }
+}
+```
+
+## Using catch with promises
+
+Handle errors inline with `.catch()`:
+
+```typescript
+const zone = await client.zones.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+}).catch(async (err) => {
+  if (err instanceof Cloudflare.APIError) {
+    console.log(err.status);  // 400
+    console.log(err.name);    // BadRequestError
+    console.log(err.headers); // {server: 'nginx', ...}
+    return null; // Return fallback value
+  } else {
+    throw err;
+  }
+});
+
+if (zone) {
+  console.log(zone.id);
+}
+```
+
+## Retry behavior
+
+Certain errors are automatically retried with exponential backoff:
+
+<Note>
+The following errors trigger automatic retries (up to 2 attempts by default):
+- Connection errors (network issues)
+- 408 Request Timeout
+- 409 Conflict
+- 429 Rate Limit
+- ≥500 Internal Server Error
+</Note>
+
+The SDK uses exponential backoff with jitter:
+- Initial retry delay: 0.5 seconds
+- Maximum retry delay: 8 seconds
+- Jitter: Up to 25% variance
+
+### Retry headers
+
+The SDK respects retry timing headers:
+- `retry-after-ms`: Milliseconds to wait before retry
+- `retry-after`: Seconds to wait or HTTP date
+- `x-should-retry`: Explicit retry instruction (`true`/`false`)
+
+## Error handling best practices
+
+<Steps>
+  <Step title="Always handle APIError">
+    Catch `APIError` to handle all API-related failures:
+    
+    ```typescript
+    try {
+      await client.zones.create(params);
+    } catch (err) {
+      if (err instanceof Cloudflare.APIError) {
+        // Handle API errors
+      } else {
+        // Handle unexpected errors
+        throw err;
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Check for specific error types">
+    Handle known error conditions explicitly:
+    
+    ```typescript
+    if (err instanceof Cloudflare.AuthenticationError) {
+      // Re-authenticate
+    } else if (err instanceof Cloudflare.RateLimitError) {
+      // Back off
+    }
+    ```
+  </Step>
+  
+  <Step title="Log error details">
+    Include status, headers, and error body for debugging:
+    
+    ```typescript
+    console.error({
+      status: err.status,
+      headers: err.headers,
+      errors: err.errors,
+      message: err.message,
+    });
+    ```
+  </Step>
+  
+  <Step title="Provide user-friendly messages">
+    Translate API errors into actionable feedback:
+    
+    ```typescript
+    if (err instanceof Cloudflare.PermissionDeniedError) {
+      throw new Error('You do not have permission to delete this zone');
+    }
+    ```
+  </Step>
+</Steps>

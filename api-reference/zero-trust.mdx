@@ -1,0 +1,261 @@
+---
+title: Zero Trust
+description: Access security and Zero Trust network access for your organization
+---
+
+The Zero Trust API provides comprehensive access control and security features for your organization, including device management, identity providers, secure access policies, and gateway configurations.
+
+## Initialize the Zero Trust resource
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+const zeroTrust = client.zeroTrust;
+```
+
+## Sub-resources
+
+The Zero Trust API provides access to several specialized resources:
+
+### Devices
+
+Manage devices that connect to your Zero Trust network.
+
+```typescript
+// List devices
+const devices = await client.zeroTrust.devices.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Get device details
+const device = await client.zeroTrust.devices.get(
+  'device_id',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Identity providers
+
+Configure identity providers for authentication.
+
+```typescript
+// List identity providers
+const providers = await client.zeroTrust.identityProviders.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Create Azure AD provider
+const provider = await client.zeroTrust.identityProviders.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'Azure AD',
+  type: 'azureAD',
+  config: {
+    client_id: 'your-client-id',
+    client_secret: 'your-client-secret',
+    directory_id: 'your-directory-id',
+  },
+});
+```
+
+### Organizations
+
+Manage your Zero Trust organization settings.
+
+```typescript
+// Create organization
+const org = await client.zeroTrust.organizations.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'My Organization',
+  auth_domain: 'example.cloudflareaccess.com',
+});
+
+// Update organization
+const updated = await client.zeroTrust.organizations.update({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'Updated Organization Name',
+});
+```
+
+### Seats
+
+Manage user seats in your Zero Trust organization.
+
+```typescript
+// Edit seats
+const seats = await client.zeroTrust.seats.edit({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  body: [
+    {
+      seat_uid: 'seat-id',
+      access_seat: false,
+      gateway_seat: true,
+    },
+  ],
+});
+```
+
+### Access
+
+Manage access policies, applications, and groups.
+
+```typescript
+// Access applications, policies, and groups
+const access = client.zeroTrust.access;
+```
+
+### Gateway
+
+Configure secure web gateway policies.
+
+```typescript
+// Create gateway configuration
+const gateway = await client.zeroTrust.gateway.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'My Gateway',
+});
+
+// List gateway configurations
+const gateways = await client.zeroTrust.gateway.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Tunnels
+
+Manage Cloudflare Tunnels for secure access to private networks.
+
+```typescript
+// List tunnels
+const tunnels = await client.zeroTrust.tunnels.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### DEX (Digital Experience Monitoring)
+
+Monitor digital experience metrics.
+
+```typescript
+const dex = client.zeroTrust.dex;
+```
+
+### DLP (Data Loss Prevention)
+
+Configure data loss prevention policies.
+
+```typescript
+const dlp = client.zeroTrust.dlp;
+```
+
+### Networks
+
+Manage Zero Trust network configurations.
+
+```typescript
+const networks = client.zeroTrust.networks;
+```
+
+### Connectivity settings
+
+Configure connectivity settings for Zero Trust.
+
+```typescript
+// Get connectivity settings
+const settings = await client.zeroTrust.connectivitySettings.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Edit connectivity settings
+const updated = await client.zeroTrust.connectivitySettings.edit({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  icmp_proxy_enabled: true,
+});
+```
+
+### Risk scoring
+
+Manage risk scoring for user behavior analytics.
+
+```typescript
+// Get risk scoring configuration
+const riskScoring = await client.zeroTrust.riskScoring.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Reset risk scoring
+const reset = await client.zeroTrust.riskScoring.reset({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+## Types
+
+### Device
+
+Represents a device in your Zero Trust network.
+
+<ResponseField name="id" type="string" required>
+  Device identifier
+</ResponseField>
+
+<ResponseField name="key" type="string">
+  Device key
+</ResponseField>
+
+<ResponseField name="device_type" type="string">
+  Type of device (e.g., 'windows', 'mac', 'linux', 'ios', 'android')
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Device name
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  User associated with the device
+</ResponseField>
+
+### IdentityProvider
+
+Configuration for an identity provider.
+
+<ResponseField name="id" type="string">
+  Identity provider identifier
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Provider name
+</ResponseField>
+
+<ResponseField name="type" type="string" required>
+  Provider type (e.g., 'azureAD', 'okta', 'google', 'saml')
+</ResponseField>
+
+<ResponseField name="config" type="object" required>
+  Provider-specific configuration
+</ResponseField>
+
+### Organization
+
+Your Zero Trust organization settings.
+
+<ResponseField name="name" type="string" required>
+  Organization name
+</ResponseField>
+
+<ResponseField name="auth_domain" type="string" required>
+  Authentication domain
+</ResponseField>
+
+<ResponseField name="login_design" type="object">
+  Customization for the login page
+</ResponseField>
+
+## Related resources
+
+- [Cloudflare Zero Trust Documentation](https://developers.cloudflare.com/cloudflare-one/)
+- [Access Application Policies](https://developers.cloudflare.com/cloudflare-one/policies/access/)
+- [Gateway Policies](https://developers.cloudflare.com/cloudflare-one/policies/gateway/)

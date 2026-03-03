@@ -1,0 +1,290 @@
+---
+title: 'Pages'
+description: 'API reference for Cloudflare Pages (JAMstack deployment platform)'
+---
+
+## Overview
+
+Cloudflare Pages is a JAMstack platform for frontend developers to collaborate and deploy websites. Use the Pages API to manage projects, deployments, and domains programmatically.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Projects
+
+Manage Pages projects.
+
+### Create a project
+
+Create a new Pages project.
+
+```typescript
+const project = await client.pages.projects.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'my-pages-app',
+  production_branch: 'main',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Project name
+</ParamField>
+
+<ParamField path="production_branch" type="string" required>
+  The Git branch that will be used for production deployments
+</ParamField>
+
+<ParamField path="build_config" type="object">
+  Build configuration settings
+</ParamField>
+
+<ParamField path="deployment_configs" type="object">
+  Deployment configuration for production and preview environments
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Project identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Project name
+</ResponseField>
+
+<ResponseField name="subdomain" type="string">
+  The project's `*.pages.dev` subdomain
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  When the project was created
+</ResponseField>
+
+### List projects
+
+Fetch all projects in an account.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const project of client.pages.projects.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(project);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+### Get a project
+
+Fetch a specific project by name.
+
+```typescript
+const project = await client.pages.projects.get(
+  'this-is-my-project-01',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Update a project
+
+Set new attributes for an existing project, including environment variables.
+
+```typescript
+const response = await client.pages.projects.edit(
+  'this-is-my-project-01',
+  { 
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    production_branch: 'main',
+  }
+);
+```
+
+<ParamField path="production_branch" type="string">
+  The Git branch for production deployments
+</ParamField>
+
+<ParamField path="deployment_configs" type="object">
+  Environment-specific deployment configuration
+</ParamField>
+
+### Delete a project
+
+Delete a project by name.
+
+```typescript
+const project = await client.pages.projects.delete(
+  'this-is-my-project-01',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Purge build cache
+
+Purge the build cache for a project.
+
+```typescript
+const response = await client.pages.projects.purgeBuildCache(
+  'this-is-my-project-01',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Deployments
+
+Manage Pages deployments for a project.
+
+```typescript
+const deployments = client.pages.projects.deployments;
+```
+
+Available methods:
+
+### Create deployment
+
+Create a new deployment.
+
+```typescript
+const deployment = await client.pages.projects.deployments.create(
+  'my-project',
+  params
+);
+```
+
+### List deployments
+
+List all deployments for a project.
+
+```typescript
+const deployments = await client.pages.projects.deployments.list(
+  'my-project',
+  params
+);
+```
+
+### Get deployment
+
+Get details of a specific deployment.
+
+```typescript
+const deployment = await client.pages.projects.deployments.get(
+  'my-project',
+  deploymentId,
+  params
+);
+```
+
+### Delete deployment
+
+Delete a deployment.
+
+```typescript
+await client.pages.projects.deployments.delete(
+  'my-project',
+  deploymentId,
+  params
+);
+```
+
+### Retry deployment
+
+Retry a failed deployment.
+
+```typescript
+const deployment = await client.pages.projects.deployments.retry(
+  'my-project',
+  deploymentId,
+  params
+);
+```
+
+### Rollback deployment
+
+Rollback to a previous deployment.
+
+```typescript
+const deployment = await client.pages.projects.deployments.rollback(
+  'my-project',
+  deploymentId,
+  params
+);
+```
+
+## Domains
+
+Manage custom domains for a project.
+
+```typescript
+const domains = client.pages.projects.domains;
+```
+
+Available methods:
+- `create()` - Add a custom domain
+- `list()` - List all custom domains
+- `get()` - Get domain details
+- `delete()` - Remove a custom domain
+
+## Types
+
+### Project
+
+<ResponseField name="id" type="string">
+  Project identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Project name
+</ResponseField>
+
+<ResponseField name="subdomain" type="string">
+  The `*.pages.dev` subdomain
+</ResponseField>
+
+<ResponseField name="production_branch" type="string">
+  Git branch for production
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  Creation timestamp
+</ResponseField>
+
+### Deployment
+
+<ResponseField name="id" type="string">
+  Deployment identifier
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  Deployment URL
+</ResponseField>
+
+<ResponseField name="environment" type="string">
+  Deployment environment (production or preview)
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  When the deployment was created
+</ResponseField>
+
+### Stage
+
+Deployment stage information.
+
+<ResponseField name="name" type="string">
+  Stage name
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Stage status
+</ResponseField>

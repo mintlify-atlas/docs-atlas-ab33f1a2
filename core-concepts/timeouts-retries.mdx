@@ -1,0 +1,392 @@
+---
+title: Timeouts and retries
+description: Configure timeout behavior and automatic retry logic
+---
+
+The Cloudflare SDK provides configurable timeout and retry mechanisms to handle network issues and transient failures.
+
+## Timeout configuration
+
+Requests time out after 60 seconds (60,000 milliseconds) by default.
+
+### Global timeout
+
+Set a default timeout for all requests:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  timeout: 20 * 1000, // 20 seconds
+});
+```
+
+### Per-request timeout
+
+Override the timeout for individual requests:
+
+```typescript
+const zone = await client.zones.edit(
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+  {
+    timeout: 5 * 1000, // 5 seconds
+  }
+);
+```
+
+<Note>
+Timeout values are specified in milliseconds. The default timeout is `60000` (1 minute).
+</Note>
+
+## Timeout errors
+
+When a request times out, the SDK throws `APIConnectionTimeoutError`:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare();
+
+try {
+  const zone = await client.zones.get(
+    { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+    { timeout: 1000 } // Very short timeout
+  );
+} catch (err) {
+  if (err instanceof Cloudflare.APIConnectionTimeoutError) {
+    console.error('Request timed out');
+    // Retry with longer timeout or implement backoff
+  }
+  throw err;
+}
+```
+
+## Retry behavior
+
+The SDK automatically retries failed requests with exponential backoff.
+
+### Default retry policy
+
+<Steps>
+  <Step title="Retry attempts">
+    Failed requests are retried up to 2 times by default (3 total attempts).
+  </Step>
+  
+  <Step title="Retryable conditions">
+    The following errors trigger automatic retries:
+    - Connection errors (network failures)
+    - 408 Request Timeout
+    - 409 Conflict  
+    - 429 Rate Limit
+    - ≥500 Internal Server Error
+  </Step>
+  
+  <Step title="Exponential backoff">
+    Retry delays increase exponentially:
+    - Initial delay: 0.5 seconds
+    - Maximum delay: 8 seconds
+    - Jitter: Up to 25% variance
+  </Step>
+</Steps>
+
+### Configuring retries
+
+<Tabs>
+  <Tab title="Global Configuration">
+    Set the default retry behavior for all requests:
+    
+    ```typescript
+    const client = new Cloudflare({
+      maxRetries: 0, // Disable retries
+    });
+    
+    const client = new Cloudflare({
+      maxRetries: 5, // Retry up to 5 times
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Per-Request Configuration">
+    Override retry behavior for specific requests:
+    
+    ```typescript
+    await client.zones.get(
+      { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+      {
+        maxRetries: 5, // Retry this request up to 5 times
+      }
+    );
+    ```
+  </Tab>
+</Tabs>
+
+<ParamField path="maxRetries" type="number" default="2">
+  Maximum number of retry attempts. Set to `0` to disable retries.
+</ParamField>
+
+## Retry timing
+
+The SDK uses exponential backoff with jitter to calculate retry delays:
+
+```typescript
+// Retry delay calculation (internal)
+function calculateRetryDelay(retryCount: number): number {
+  const initialDelay = 0.5; // seconds
+  const maxDelay = 8.0;     // seconds
+  
+  // Exponential backoff
+  const delay = Math.min(
+    initialDelay * Math.pow(2, retryCount),
+    maxDelay
+  );
+  
+  // Add jitter (up to 25% variance)
+  const jitter = 1 - Math.random() * 0.25;
+  
+  return delay * jitter * 1000; // Convert to milliseconds
+}
+```
+
+### Example retry timeline
+
+| Attempt | Base Delay | With Jitter (approx) |
+|---------|------------|----------------------|
+| 1st retry | 0.5s | 0.375s - 0.5s |
+| 2nd retry | 1.0s | 0.75s - 1.0s |
+| 3rd retry | 2.0s | 1.5s - 2.0s |
+| 4th retry | 4.0s | 3.0s - 4.0s |
+| 5th retry | 8.0s | 6.0s - 8.0s |
+
+## Retry headers
+
+The SDK respects server-provided retry timing:
+
+<CodeGroup>
+```typescript retry-after-ms
+// Server response includes:
+// retry-after-ms: 5000
+
+// SDK waits 5000ms before retrying
+```
+
+```typescript retry-after (seconds)
+// Server response includes:
+// retry-after: 30
+
+// SDK waits 30 seconds before retrying
+```
+
+```typescript retry-after (HTTP date)
+// Server response includes:
+// retry-after: Wed, 21 Oct 2026 07:28:00 GMT
+
+// SDK waits until specified time before retrying
+```
+
+```typescript x-should-retry
+// Server response includes:
+// x-should-retry: false
+
+// SDK skips retry even for retryable status codes
+```
+</CodeGroup>
+
+<Note>
+Server-provided retry delays are only used if they fall within 0-60 seconds. Otherwise, the default exponential backoff applies.
+</Note>
+
+## Timeout and retry interaction
+
+Timeouts apply to each individual request attempt, not the total time including retries:
+
+```typescript
+const client = new Cloudflare({
+  timeout: 10 * 1000,  // 10 second timeout per attempt
+  maxRetries: 2,        // 2 retries (3 total attempts)
+});
+
+// Worst case: 3 attempts × 10s timeout + retry delays
+// Could take 30+ seconds total before final failure
+```
+
+### Managing total time
+
+To limit the total time including retries, use `AbortSignal`:
+
+```typescript
+const controller = new AbortController();
+
+// Abort after 30 seconds total
+setTimeout(() => controller.abort(), 30 * 1000);
+
+try {
+  const zone = await client.zones.get(
+    { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+    { signal: controller.signal }
+  );
+} catch (err) {
+  if (err instanceof Cloudflare.APIUserAbortError) {
+    console.error('Request aborted after timeout');
+  }
+  throw err;
+}
+```
+
+## Request cancellation
+
+Cancel in-flight requests using `AbortSignal`:
+
+```typescript
+const controller = new AbortController();
+
+const promise = client.zones.list({
+  signal: controller.signal,
+});
+
+// Cancel the request
+controller.abort();
+
+try {
+  await promise;
+} catch (err) {
+  if (err instanceof Cloudflare.APIUserAbortError) {
+    console.log('Request was cancelled');
+  }
+}
+```
+
+<Warning>
+Cancelling a request does not guarantee the operation won't complete on the server. Use idempotent operations when possible.
+</Warning>
+
+## Best practices
+
+<Steps>
+  <Step title="Set appropriate timeouts">
+    Choose timeout values based on expected operation duration:
+    
+    ```typescript
+    // Quick metadata fetch
+    client.zones.get(params, { timeout: 5000 });
+    
+    // Large data export
+    client.logs.download(params, { timeout: 120000 });
+    ```
+  </Step>
+  
+  <Step title="Use retries for transient failures">
+    Enable retries for operations that can safely be retried:
+    
+    ```typescript
+    // Safe to retry (idempotent)
+    client.zones.list({ maxRetries: 3 });
+    
+    // Not safe to retry (non-idempotent)
+    client.zones.create(params, { maxRetries: 0 });
+    ```
+  </Step>
+  
+  <Step title="Monitor timeout errors">
+    Track timeout patterns to identify issues:
+    
+    ```typescript
+    try {
+      await client.zones.get(params);
+    } catch (err) {
+      if (err instanceof Cloudflare.APIConnectionTimeoutError) {
+        // Log timeout for monitoring
+        console.error('Timeout occurred', {
+          endpoint: 'zones.get',
+          timestamp: new Date(),
+        });
+      }
+      throw err;
+    }
+    ```
+  </Step>
+  
+  <Step title="Implement circuit breakers">
+    Prevent cascading failures with circuit breaker patterns:
+    
+    ```typescript
+    let failureCount = 0;
+    const MAX_FAILURES = 5;
+    
+    async function safeApiCall() {
+      if (failureCount >= MAX_FAILURES) {
+        throw new Error('Circuit breaker open');
+      }
+      
+      try {
+        const result = await client.zones.list();
+        failureCount = 0; // Reset on success
+        return result;
+      } catch (err) {
+        failureCount++;
+        throw err;
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Handle rate limits gracefully">
+    Respect 429 responses and retry headers:
+    
+    ```typescript
+    try {
+      await client.zones.create(params);
+    } catch (err) {
+      if (err instanceof Cloudflare.RateLimitError) {
+        // SDK already retried automatically
+        console.error('Rate limit exceeded after retries');
+        // Consider implementing additional backoff
+      }
+      throw err;
+    }
+    ```
+  </Step>
+</Steps>
+
+## Configuration reference
+
+Complete `ClientOptions` for timeouts and retries:
+
+```typescript
+interface ClientOptions {
+  /**
+   * Maximum time in milliseconds to wait for a response
+   * @default 60000 (1 minute)
+   */
+  timeout?: number;
+  
+  /**
+   * Maximum number of retry attempts
+   * @default 2
+   */
+  maxRetries?: number;
+  
+  /**
+   * HTTP agent for connection pooling
+   * @default Automatically created in Node.js
+   */
+  httpAgent?: Agent;
+}
+```
+
+### Per-request options
+
+```typescript
+interface RequestOptions {
+  /** Override timeout for this request */
+  timeout?: number;
+  
+  /** Override maxRetries for this request */
+  maxRetries?: number;
+  
+  /** AbortSignal for request cancellation */
+  signal?: AbortSignal;
+  
+  /** Custom HTTP agent for this request */
+  httpAgent?: Agent;
+}
+```

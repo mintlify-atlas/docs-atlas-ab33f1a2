@@ -1,0 +1,654 @@
+---
+title: Migrating to v6
+description: Guide for migrating from v5 to v6 of the Cloudflare TypeScript SDK
+---
+
+<Warning>
+  v6.0.0-beta.1 is currently in Beta. Please test thoroughly before deploying to production.
+</Warning>
+
+Version 6 introduces significant breaking changes primarily due to OpenAPI specification updates and improved code generation. This guide will help you migrate from v5 to v6 successfully.
+
+## Overview
+
+The v6 release includes:
+
+- Type safety improvements with discriminated unions
+- Parameter requirement changes across multiple services
+- Interface renames and restructuring
+- Removal of deprecated features
+- New pagination patterns
+
+<Note>
+  Most breaking changes stem from OpenAPI definition updates that improve type safety and API accuracy. Take time to review each section relevant to your implementation.
+</Note>
+
+## Breaking changes by service
+
+### Addressing
+
+#### Parameter requirement changes
+
+Several parameters have changed from optional to required, or had their types refined:
+
+<Accordion title="BGPPrefix and ServiceBinding changes">
+  ```typescript
+  // Before (v5)
+  await client.addressing.prefixes.bgp.create({
+    account_id: 'abc123',
+    // cidr was optional
+  });
+
+  // After (v6)
+  await client.addressing.prefixes.bgp.create({
+    account_id: 'abc123',
+    cidr: '203.0.113.0/24', // now required
+  });
+  ```
+
+  **Changes:**
+  - `BGPPrefixCreateParams.cidr`: optional → **required**
+  - `PrefixCreateParams.asn`: `number | null` → `number`
+  - `PrefixCreateParams.loa_document_id`: required → **optional**
+  - `ServiceBindingCreateParams.cidr`: optional → **required**
+  - `ServiceBindingCreateParams.service_id`: optional → **required**
+</Accordion>
+
+### API Gateway
+
+Type renames and parameter changes improve consistency:
+
+```typescript
+// Before (v5)
+import { PublicSchema, SchemaUpload } from 'cloudflare';
+
+// After (v6)
+import { OldPublicSchema, UserSchemaCreateResponse } from 'cloudflare';
+```
+
+**Changes:**
+- `ConfigurationUpdateResponse` removed
+- `PublicSchema` → `OldPublicSchema`
+- `SchemaUpload` → `UserSchemaCreateResponse`
+- `ConfigurationUpdateParams.properties` removed; use `normalize` instead
+
+### CloudforceOne
+
+Response type changes for bulk operations:
+
+<Accordion title="Bulk create response structure">
+  ```typescript
+  // Before (v5)
+  const result: number = await client.cloudforceOne.threatEvents.bulkCreate({
+    // ...
+  });
+
+  // After (v6)
+  const result = await client.cloudforceOne.threatEvents.bulkCreate({
+    // ...
+  });
+  // Returns: { counts: {...}, errors: [...] }
+  ```
+
+  The response is now a complex object with `counts` and `errors` fields instead of a simple number.
+</Accordion>
+
+### D1 Database
+
+Query parameter types now support batch operations:
+
+```typescript
+// Before (v5)
+await client.d1.database.query(dbId, {
+  sql: 'SELECT * FROM users',
+});
+
+// After (v6) - Single query
+await client.d1.database.query(dbId, {
+  sql: 'SELECT * FROM users',
+});
+
+// After (v6) - Batch queries
+await client.d1.database.query(dbId, {
+  batch: [
+    { sql: 'SELECT * FROM users' },
+    { sql: 'SELECT * FROM posts' },
+  ],
+});
+```
+
+**Changes:**
+- `DatabaseQueryParams`: simple interface → union type (`D1SingleQuery | MultipleQueries`)
+- `DatabaseRawParams`: same change
+- Supports batch queries via `batch` array
+
+### DNS Records
+
+All DNS record type interfaces have been renamed from long names to short codes:
+
+<Accordion title="DNS record type renames (21 types)">
+  ```typescript
+  // Before (v5)
+  import { 
+    RecordResponse.ARecord,
+    RecordResponse.AAAARecord,
+    RecordResponse.CNAMERecord 
+  } from 'cloudflare';
+
+  // After (v6)
+  import { 
+    RecordResponse.A,
+    RecordResponse.AAAA,
+    RecordResponse.CNAME 
+  } from 'cloudflare';
+  ```
+
+  **Complete list of renames:**
+  - `ARecord` → `A`
+  - `AAAARecord` → `AAAA`
+  - `CNAMERecord` → `CNAME`
+  - `MXRecord` → `MX`
+  - `NSRecord` → `NS`
+  - `PTRRecord` → `PTR`
+  - `TXTRecord` → `TXT`
+  - `CAARecord` → `CAA`
+  - `CERTRecord` → `CERT`
+  - `DNSKEYRecord` → `DNSKEY`
+  - `DSRecord` → `DS`
+  - `HTTPSRecord` → `HTTPS`
+  - `LOCRecord` → `LOC`
+  - `NAPTRRecord` → `NAPTR`
+  - `SMIMEARecord` → `SMIMEA`
+  - `SRVRecord` → `SRV`
+  - `SSHFPRecord` → `SSHFP`
+  - `SVCBRecord` → `SVCB`
+  - `TLSARecord` → `TLSA`
+  - `URIRecord` → `URI`
+  - `OpenpgpkeyRecord` → `Openpgpkey`
+</Accordion>
+
+### IAM Resource Groups
+
+Field requirement changes:
+
+```typescript
+// Before (v5)
+const group = await client.iam.resourceGroups.create({
+  // ...
+});
+// group.scope was optional single value
+// group.id was optional
+
+// After (v6)
+const group = await client.iam.resourceGroups.create({
+  // ...
+});
+// group.scope is required array
+// group.id is required
+```
+
+**Changes:**
+- `ResourceGroupCreateResponse.scope`: optional single → **required array**
+- `ResourceGroupCreateResponse.id`: optional → **required**
+
+### Origin CA Certificates
+
+Several optional parameters are now required:
+
+```typescript
+// Before (v5)
+await client.ssl.certificateAuthorities.originCaCertificates.create({
+  // All parameters were optional
+});
+
+// After (v6)
+await client.ssl.certificateAuthorities.originCaCertificates.create({
+  csr: '-----BEGIN CERTIFICATE REQUEST-----...',
+  hostnames: ['example.com'],
+  request_type: 'origin-rsa',
+  // All three parameters now required
+});
+```
+
+**Changes:**
+- `OriginCACertificateCreateParams.csr`: optional → **required**
+- `OriginCACertificateCreateParams.hostnames`: optional → **required**
+- `OriginCACertificateCreateParams.request_type`: optional → **required**
+
+### Pages
+
+Type renames and domain field changes:
+
+```typescript
+// Before (v5)
+import { DeploymentsSinglePage } from 'cloudflare';
+
+// After (v6)
+import { DeploymentListResponsesV4PagePaginationArray } from 'cloudflare';
+```
+
+**Changes:**
+- Renamed: `DeploymentsSinglePage` → `DeploymentListResponsesV4PagePaginationArray`
+- Domain response fields: many optional → **required**
+
+### Pipelines
+
+Major version upgrade from v0 to v1 API:
+
+<Warning>
+  The entire v0 API is deprecated. You must migrate to v1 methods.
+</Warning>
+
+<Steps>
+  <Step title="Update method names">
+    All Pipelines methods now have `V1` suffix:
+    
+    ```typescript
+    // Before (v5)
+    await client.pipelines.create({ /* ... */ });
+    await client.pipelines.list();
+    
+    // After (v6)
+    await client.pipelines.createV1({ /* ... */ });
+    await client.pipelines.listV1();
+    ```
+  </Step>
+  
+  <Step title="Use new sub-resources">
+    v1 introduces new sub-resources for better organization:
+    
+    ```typescript
+    // Sinks
+    await client.pipelines.sinks.create({ /* ... */ });
+    await client.pipelines.sinks.list();
+    await client.pipelines.sinks.delete(sinkId);
+    await client.pipelines.sinks.get(sinkId);
+    
+    // Streams
+    await client.pipelines.streams.create({ /* ... */ });
+    await client.pipelines.streams.update(streamId, { /* ... */ });
+    await client.pipelines.streams.list();
+    await client.pipelines.streams.delete(streamId);
+    await client.pipelines.streams.get(streamId);
+    ```
+  </Step>
+</Steps>
+
+### R2
+
+Parameter requirement changes:
+
+```typescript
+// Before (v5)
+await client.r2.buckets.eventNotifications.update(bucketName, {
+  // rules was optional
+});
+
+// After (v6)
+await client.r2.buckets.eventNotifications.update(bucketName, {
+  rules: [/* ... */], // now required
+});
+```
+
+**Changes:**
+- `EventNotificationUpdateParams.rules`: optional → **required**
+- Super Slurper: `bucket`, `secret` now required in source params
+
+### Radar
+
+Typed enums and signature changes:
+
+<Accordion title="Enum type changes">
+  ```typescript
+  // Before (v5)
+  const dataSource: string = 'cloudflare';
+  const eventType: string = 'attack';
+
+  // After (v6)
+  const dataSource: 'cloudflare' | 'apnic' | /* 21 more values */ = 'cloudflare';
+  const eventType: 'attack' | 'outage' | 'hijack' | /* 3 more values */ = 'attack';
+  ```
+
+  **Changes:**
+  - `dataSource`: `string` → typed enum (23 values)
+  - `eventType`: `string` → typed enum (6 values)
+</Accordion>
+
+<Warning>
+  V2 methods now require a `dimension` parameter, which is a breaking signature change.
+</Warning>
+
+### Resource Sharing
+
+Field removal:
+
+```typescript
+// Before (v5)
+const recipient = await client.resourceSharing.recipients.get(/* ... */);
+console.log(recipient.status_message);
+
+// After (v6)
+const recipient = await client.resourceSharing.recipients.get(/* ... */);
+// recipient.status_message no longer exists
+```
+
+**Changes:**
+- Removed: `status_message` field from all recipient response types
+
+### Schema Validation
+
+Response type consolidation:
+
+```typescript
+// Before (v5)
+import { 
+  SchemaCreateResponse,
+  SchemaListResponse,
+  SchemaEditResponse,
+  SchemaGetResponse 
+} from 'cloudflare';
+
+// After (v6)
+import { PublicSchema } from 'cloudflare';
+// All operations now return PublicSchema
+```
+
+**Changes:**
+- Consolidated `SchemaCreateResponse`, `SchemaListResponse`, `SchemaEditResponse`, `SchemaGetResponse` → `PublicSchema`
+- Renamed: `SchemaListResponsesV4PagePaginationArray` → `PublicSchemasV4PagePaginationArray`
+
+### Spectrum
+
+Union member renames:
+
+```typescript
+// Before (v5)
+import { AppListResponse } from 'cloudflare';
+type Config = AppListResponse.UnionMember0;
+
+// After (v6)
+import { SpectrumConfigAppConfig } from 'cloudflare';
+```
+
+**Changes:**
+- `AppListResponse.UnionMember0` → `SpectrumConfigAppConfig`
+- `AppListResponse.UnionMember1` → `SpectrumConfigPaygoAppConfig`
+
+### Workers
+
+Type removals and renames:
+
+```typescript
+// Before (v5)
+import { 
+  WorkersBindingKindTailConsumer,
+  ScriptsSinglePage,
+  DeploymentsSinglePage 
+} from 'cloudflare';
+
+// After (v6)
+import { ScriptListResponsesSinglePage } from 'cloudflare';
+// WorkersBindingKindTailConsumer removed
+// DeploymentsSinglePage removed
+```
+
+**Changes:**
+- Removed: `WorkersBindingKindTailConsumer` type
+- Renamed: `ScriptsSinglePage` → `ScriptListResponsesSinglePage`
+- Removed: `DeploymentsSinglePage`
+
+### Zero Trust DLP
+
+Return type changes:
+
+```typescript
+// Before (v5)
+const dataset = await client.zeroTrust.dlp.datasets.create({ /* ... */ });
+
+// After (v6)
+const dataset = await client.zeroTrust.dlp.datasets.create({ /* ... */ });
+// Return type structure has changed
+```
+
+**Changes:**
+- `datasets.create()`, `update()`, `get()` return types changed
+- `PredefinedGetResponse` union members renamed to `UnionMember0-5`
+
+### Zero Trust Tunnels
+
+Response type removals:
+
+<Warning>
+  All Cloudflared-specific response types have been removed.
+</Warning>
+
+```typescript
+// Before (v5)
+import { 
+  CloudflaredCreateResponse,
+  CloudflaredListResponse,
+  CloudflaredDeleteResponse,
+  CloudflaredEditResponse,
+  CloudflaredGetResponse,
+  CloudflaredListResponsesV4PagePaginationArray
+} from 'cloudflare';
+
+// After (v6)
+// All of these types have been removed
+```
+
+**Changes:**
+- Removed all `Cloudflared*Response` types
+- Removed: `CloudflaredListResponsesV4PagePaginationArray`
+
+## New features in v6
+
+<Note>
+  While v6 includes many breaking changes, it also introduces powerful new capabilities across the SDK.
+</Note>
+
+### New top-level resources
+
+<Accordion title="Abuse Reports">
+  - **Reports**: `create`, `list`, `get`
+  - **Mitigations**: sub-resource for abuse mitigations
+</Accordion>
+
+<Accordion title="AI Search">
+  - **Instances**: `create`, `update`, `list`, `delete`, `read`, `stats`
+  - **Items**: `list`, `get`
+  - **Jobs**: `create`, `list`, `get`, `logs`
+  - **Tokens**: `create`, `update`, `list`, `delete`, `read`
+</Accordion>
+
+<Accordion title="Connectivity">
+  - **Directory Services**: `create`, `update`, `list`, `delete`, `get`
+  - Supports IPv4, IPv6, dual-stack, and hostname configurations
+</Accordion>
+
+<Accordion title="Organizations">
+  - **Organizations**: `create`, `update`, `list`, `delete`, `get`
+  - **OrganizationProfile**: `update`, `get`
+  - Hierarchical organization support with parent/child relationships
+</Accordion>
+
+<Accordion title="R2 Data Catalog">
+  - **Catalog**: `list`, `enable`, `disable`, `get`
+  - **Credentials**: `create`
+  - **MaintenanceConfigs**: `update`, `get`
+  - **Namespaces**: `list`
+  - **Tables**: `list`, maintenance config management
+  - Apache Iceberg integration
+</Accordion>
+
+<Accordion title="Realtime Kit">
+  - **Apps**: `get`, `post`
+  - **Meetings**: `create`, `get`, participant management
+  - **Livestreams**: 10+ methods for streaming
+  - **Recordings**: start, pause, stop, get
+  - **Sessions**: transcripts, summaries, chat
+  - **Webhooks**: full CRUD
+  - **ActiveSession**: polls, kick participants
+  - **Analytics**: organization analytics
+</Accordion>
+
+<Accordion title="Token Validation">
+  - **Configuration**: `create`, `list`, `delete`, `edit`, `get`
+  - **Credentials**: `update`
+  - **Rules**: `create`, `list`, `delete`, `bulkCreate`, `bulkEdit`, `edit`, `get`
+  - JWT validation with RS256/384/512, PS256/384/512, ES256, ES384
+</Accordion>
+
+### Enhanced existing resources
+
+<Accordion title="D1 Time Travel">
+  Point-in-time recovery capabilities:
+  
+  ```typescript
+  // Get bookmark for point-in-time recovery
+  const bookmark = await client.d1.database.timeTravel.getBookmark(dbId);
+  
+  // Restore to a specific point in time
+  await client.d1.database.timeTravel.restore(dbId, {
+    bookmark: 'bookmark-id',
+  });
+  ```
+</Accordion>
+
+<Accordion title="Queues Subscriptions">
+  Event subscriptions from multiple sources:
+  
+  ```typescript
+  await client.queues.subscriptions.create(accountId, queueId, {
+    event_source: {
+      type: 'r2',
+      bucket: 'my-bucket',
+      // ...
+    },
+  });
+  ```
+  
+  Supported event sources: Images, KV, R2, Vectorize, Workers AI, Workers Builds, Workflows
+</Accordion>
+
+<Accordion title="Workers Observability">
+  New observability settings:
+  
+  ```typescript
+  const script = await client.workers.scripts.get(scriptName);
+  console.log(script.observability); // logging configuration
+  console.log(script.startup_time_ms); // startup timing
+  console.log(script.references); // external dependencies
+  ```
+</Accordion>
+
+<Accordion title="Zero Trust AI Controls / MCP">
+  Model Context Protocol support:
+  
+  ```typescript
+  // Portals
+  await client.zeroTrust.access.aiControls.mcp.portals.create({ /* ... */ });
+  
+  // Servers
+  await client.zeroTrust.access.aiControls.mcp.servers.create({ /* ... */ });
+  await client.zeroTrust.access.aiControls.mcp.servers.sync(serverId);
+  ```
+</Accordion>
+
+## Migration checklist
+
+<Steps>
+  <Step title="Audit your current usage">
+    Review which Cloudflare services your application uses and check the breaking changes for each.
+  </Step>
+  
+  <Step title="Update dependencies">
+    ```bash
+    npm install cloudflare@6.0.0-beta.1
+    ```
+  </Step>
+  
+  <Step title="Fix TypeScript errors">
+    Run TypeScript compilation to identify all breaking changes:
+    
+    ```bash
+    npx tsc --noEmit
+    ```
+  </Step>
+  
+  <Step title="Update imports">
+    Replace any renamed types in your import statements.
+  </Step>
+  
+  <Step title="Update method calls">
+    - Add required parameters where needed
+    - Update pagination patterns
+    - Migrate from deprecated methods (e.g., Pipelines v0 → v1)
+  </Step>
+  
+  <Step title="Test thoroughly">
+    Run your test suite to ensure all functionality works as expected with the new types and behaviors.
+  </Step>
+  
+  <Step title="Review new features">
+    Consider adopting new v6 features that could benefit your application.
+  </Step>
+</Steps>
+
+## Common patterns
+
+### Handling discriminated unions
+
+Many response types are now discriminated unions for better type safety:
+
+```typescript
+// DNS Records
+const record = await client.dns.records.get(zoneId, recordId);
+
+// TypeScript now knows the specific type based on the record type
+if (record.type === 'A') {
+  console.log(record.content); // string (IP address)
+} else if (record.type === 'MX') {
+  console.log(record.priority); // number
+}
+```
+
+### Updated pagination
+
+Some resources have changed pagination types:
+
+```typescript
+// Before (v5) - SinglePage
+for await (const item of client.iam.resourceGroups.list()) {
+  // ...
+}
+
+// After (v6) - Still works the same way
+for await (const item of client.iam.resourceGroups.list()) {
+  // ...
+}
+```
+
+### Required vs optional parameters
+
+Many parameters have changed from optional to required. Always check the TypeScript types to see what's required:
+
+```typescript
+// TypeScript will error if you forget required parameters
+await client.addressing.prefixes.bgp.create({
+  account_id: 'abc123',
+  cidr: '203.0.113.0/24', // Required in v6, was optional in v5
+});
+```
+
+## Getting help
+
+If you encounter issues during migration:
+
+1. Check the [full CHANGELOG](https://github.com/cloudflare/cloudflare-typescript/blob/main/CHANGELOG.md) for detailed change information
+2. Review the [TypeScript SDK documentation](https://developers.cloudflare.com/api/resources/)
+3. Open an issue on [GitHub](https://github.com/cloudflare/cloudflare-typescript/issues) if you find bugs or have questions
+
+<Note>
+  Remember that v6.0.0-beta.1 is in Beta. Please report any issues you encounter to help improve the release.
+</Note>

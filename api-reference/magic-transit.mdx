@@ -1,0 +1,199 @@
+---
+title: 'Magic Transit'
+description: 'API reference for Cloudflare Magic Transit network security service'
+---
+
+## Overview
+
+Magic Transit provides network-level DDoS protection and traffic acceleration for your entire network. Use the Magic Transit API to manage routes, tunnels, sites, and network monitoring.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Resources
+
+The Magic Transit API provides the following sub-resources:
+
+### Routes
+
+Manage Magic static routes for traffic routing.
+
+#### Create a route
+
+Creates a new Magic static route.
+
+```typescript
+const route = await client.magicTransit.routes.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  nexthop: '203.0.113.1',
+  prefix: '192.0.2.0/24',
+  priority: 0,
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="nexthop" type="string" required>
+  The next hop IP address for this route
+</ParamField>
+
+<ParamField path="prefix" type="string" required>
+  IP prefix in CIDR notation
+</ParamField>
+
+<ParamField path="priority" type="number" required>
+  Route priority (lower values have higher priority)
+</ParamField>
+
+#### Update a route
+
+Update a specific Magic static route.
+
+```typescript
+const route = await client.magicTransit.routes.update(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    nexthop: '203.0.113.1',
+    prefix: '192.0.2.0/24',
+    priority: 0,
+  }
+);
+```
+
+#### List routes
+
+List all Magic static routes.
+
+```typescript
+const routes = await client.magicTransit.routes.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+#### Delete a route
+
+Disable and remove a specific Magic static route.
+
+```typescript
+const route = await client.magicTransit.routes.delete(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### GRE tunnels
+
+Manage Generic Routing Encapsulation (GRE) tunnels for Magic Transit.
+
+```typescript
+const greTunnels = client.magicTransit.greTunnels;
+```
+
+Available methods:
+- `create()` - Create a new GRE tunnel
+- `update()` - Update an existing GRE tunnel
+- `list()` - List all GRE tunnels
+- `delete()` - Delete a GRE tunnel
+- `get()` - Get details of a specific GRE tunnel
+- `bulkUpdate()` - Update multiple GRE tunnels at once
+
+### IPsec tunnels
+
+Manage IPsec tunnels for Magic Transit.
+
+```typescript
+const ipsecTunnels = client.magicTransit.ipsecTunnels;
+```
+
+Available methods:
+- `create()` - Create a new IPsec tunnel
+- `update()` - Update an existing IPsec tunnel
+- `list()` - List all IPsec tunnels
+- `delete()` - Delete an IPsec tunnel
+- `get()` - Get details of a specific IPsec tunnel
+- `pskGenerate()` - Generate a pre-shared key for IPsec tunnel
+
+### Sites
+
+Manage Magic Transit sites with LAN/WAN configuration.
+
+```typescript
+const sites = client.magicTransit.sites;
+```
+
+Available methods:
+- `create()` - Create a new site
+- `update()` - Update an existing site
+- `list()` - List all sites
+- `delete()` - Delete a site
+- `get()` - Get details of a specific site
+
+### Connectors
+
+Manage Magic Connector instances for site connectivity.
+
+```typescript
+const connectors = client.magicTransit.connectors;
+```
+
+### PCAPs
+
+Capture and analyze network packet data.
+
+```typescript
+const pcaps = client.magicTransit.pcaps;
+```
+
+Available methods:
+- `create()` - Start a new packet capture
+- `list()` - List all packet captures
+- `get()` - Get details of a specific capture
+- `stop()` - Stop an ongoing packet capture
+
+### CF Interconnects
+
+Manage Cloudflare Interconnects for Magic Transit.
+
+```typescript
+const cfInterconnects = client.magicTransit.cfInterconnects;
+```
+
+### Apps
+
+Manage Magic Transit application configurations.
+
+```typescript
+const apps = client.magicTransit.apps;
+```
+
+## Types
+
+### HealthCheck
+
+Configuration for tunnel health checks.
+
+<ResponseField name="enabled" type="boolean">
+  Determines whether to run health checks for a tunnel
+</ResponseField>
+
+<ResponseField name="rate" type="'low' | 'mid' | 'high'">
+  How frequently the health check runs (default: 'mid')
+</ResponseField>
+
+<ResponseField name="type" type="'reply' | 'request'">
+  The type of health check to run (default: 'reply')
+</ResponseField>
+
+<ResponseField name="target" type="string | object">
+  The destination address for request-type health checks
+</ResponseField>

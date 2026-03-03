@@ -1,0 +1,210 @@
+---
+title: Memberships
+description: Manage account memberships and invitations
+---
+
+The Memberships API allows you to manage user memberships across Cloudflare accounts, including accepting or rejecting invitations and viewing membership details.
+
+## List memberships
+
+List all memberships of accounts the user can access.
+
+```typescript
+for await (const membership of client.memberships.list()) {
+  console.log(membership.account?.name, membership.status);
+}
+```
+
+<ParamField query="account" type="object">
+  Filter by account
+  <Expandable>
+    <ParamField query="name" type="string">
+      Account name to filter by
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField query="name" type="string">
+  Filter by account name
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by membership status
+  
+  Options: `accepted` | `pending` | `rejected`
+</ParamField>
+
+<ParamField query="order" type="string">
+  Field to order memberships by
+  
+  Options: `id` | `account.name` | `status`
+</ParamField>
+
+<ParamField query="direction" type="string">
+  Direction to order memberships
+  
+  Options: `asc` | `desc`
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of items per page
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Membership identifier tag
+</ResponseField>
+
+<ResponseField name="account" type="object">
+  Account details
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status of this membership: `accepted`, `pending`, or `rejected`
+</ResponseField>
+
+<ResponseField name="roles" type="string[]">
+  List of role names the membership has for this account
+</ResponseField>
+
+<ResponseField name="permissions" type="object">
+  All access permissions for the user at the account
+  <Expandable>
+    <ResponseField name="analytics" type="object">
+      Analytics permission grant
+    </ResponseField>
+    <ResponseField name="billing" type="object">
+      Billing permission grant
+    </ResponseField>
+    <ResponseField name="cache_purge" type="object">
+      Cache purge permission grant
+    </ResponseField>
+    <ResponseField name="dns" type="object">
+      DNS permission grant
+    </ResponseField>
+    <ResponseField name="dns_records" type="object">
+      DNS records permission grant
+    </ResponseField>
+    <ResponseField name="lb" type="object">
+      Load balancer permission grant
+    </ResponseField>
+    <ResponseField name="logs" type="object">
+      Logs permission grant
+    </ResponseField>
+    <ResponseField name="organization" type="object">
+      Organization permission grant
+    </ResponseField>
+    <ResponseField name="ssl" type="object">
+      SSL permission grant
+    </ResponseField>
+    <ResponseField name="waf" type="object">
+      WAF permission grant
+    </ResponseField>
+    <ResponseField name="zone_settings" type="object">
+      Zone settings permission grant
+    </ResponseField>
+    <ResponseField name="zones" type="object">
+      Zones permission grant
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="api_access_enabled" type="boolean | null">
+  Enterprise only. Indicates whether API access is enabled for this user on the account
+</ResponseField>
+
+## Get membership
+
+Retrieve details about a specific membership.
+
+```typescript
+const membership = await client.memberships.get(
+  '4536bcfad5faccb111b47003c79917fa'
+);
+```
+
+<ResponseField name="id" type="string">
+  Membership identifier tag
+</ResponseField>
+
+<ResponseField name="account" type="object">
+  Account information
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Membership status: `accepted`, `pending`, or `rejected`
+</ResponseField>
+
+<ResponseField name="roles" type="string[]">
+  Role names assigned to this membership
+</ResponseField>
+
+<ResponseField name="permissions" type="object">
+  Access permissions for the user
+</ResponseField>
+
+<ResponseField name="policies" type="object[]">
+  Access policies for the membership
+</ResponseField>
+
+<ResponseField name="api_access_enabled" type="boolean | null">
+  Whether API access is enabled (Enterprise only)
+</ResponseField>
+
+## Update membership
+
+Accept or reject an account invitation.
+
+```typescript
+const membership = await client.memberships.update(
+  '4536bcfad5faccb111b47003c79917fa',
+  { status: 'accepted' }
+);
+```
+
+<ParamField body="status" type="string" required>
+  Whether to accept or reject the invitation
+  
+  Options: `accepted` | `rejected`
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Membership identifier tag
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Updated membership status
+</ResponseField>
+
+<ResponseField name="account" type="object">
+  Account details
+</ResponseField>
+
+<ResponseField name="roles" type="string[]">
+  Assigned roles
+</ResponseField>
+
+<ResponseField name="permissions" type="object">
+  User permissions
+</ResponseField>
+
+<ResponseField name="policies" type="object[]">
+  Access policies applied to the membership
+</ResponseField>
+
+## Delete membership
+
+Remove the associated member from an account.
+
+```typescript
+const result = await client.memberships.delete(
+  '4536bcfad5faccb111b47003c79917fa'
+);
+```
+
+<ResponseField name="id" type="string">
+  ID of the deleted membership
+</ResponseField>

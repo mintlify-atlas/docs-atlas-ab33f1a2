@@ -1,0 +1,206 @@
+---
+title: 'Spectrum'
+description: 'API reference for Cloudflare Spectrum (TCP/UDP proxy)'
+---
+
+## Overview
+
+Spectrum extends Cloudflare's DDoS protection and performance to any TCP or UDP-based application. Use the Spectrum API to manage application configurations and view analytics.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Apps
+
+Manage Spectrum applications for TCP/UDP proxying.
+
+### Create an app
+
+Create a new Spectrum application.
+
+```typescript
+const app = await client.spectrum.apps.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  dns: {},
+  protocol: 'tcp/22',
+  traffic_type: 'direct',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="protocol" type="string" required>
+  The port configuration at Cloudflare's edge. May specify a single port (e.g., `"tcp/1000"`) or a range (e.g., `"tcp/1000-2000"`)
+</ParamField>
+
+<ParamField path="dns" type="object" required>
+  The name and type of DNS record for the Spectrum application
+</ParamField>
+
+<ParamField path="traffic_type" type="'direct' | 'http' | 'https'" required>
+  Determines how data travels from the edge to your origin:
+  - `direct` - Send traffic directly to origin
+  - `http` - Apply HTTP features
+  - `https` - Apply HTTPS features
+</ParamField>
+
+<ParamField path="origin_dns" type="object">
+  The name and type of DNS record for the origin
+</ParamField>
+
+<ParamField path="origin_port" type="number | string">
+  The destination port at the origin. Can be a single port or range
+</ParamField>
+
+<ParamField path="edge_ips" type="object">
+  The anycast edge IP configuration for this application
+</ParamField>
+
+<ParamField path="argo_smart_routing" type="boolean">
+  Enable Argo Smart Routing (TCP applications with direct traffic only)
+</ParamField>
+
+<ParamField path="ip_firewall" type="boolean">
+  Enable IP Access Rules for this application
+</ParamField>
+
+<ParamField path="proxy_protocol" type="'off' | 'v1' | 'v2' | 'simple'">
+  Enable Proxy Protocol to the origin
+</ParamField>
+
+<ParamField path="tls" type="'off' | 'flexible' | 'full' | 'strict'">
+  TLS encryption mode between Cloudflare and origin
+</ParamField>
+
+<ResponseField name="id" type="string">
+  App identifier
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  When the application was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  When the application was last modified
+</ResponseField>
+
+### Update an app
+
+Update an existing Spectrum application.
+
+```typescript
+const app = await client.spectrum.apps.update(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    dns: {},
+    protocol: 'tcp/22',
+    traffic_type: 'direct',
+  }
+);
+```
+
+### List apps
+
+Retrieve a list of all Spectrum applications in a zone.
+
+```typescript
+const apps = await client.spectrum.apps.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Get an app
+
+Get the configuration of a specific Spectrum application.
+
+```typescript
+const app = await client.spectrum.apps.get(
+  appId,
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete an app
+
+Delete a Spectrum application.
+
+```typescript
+await client.spectrum.apps.delete(
+  appId,
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Analytics
+
+View analytics for Spectrum applications.
+
+```typescript
+const analytics = client.spectrum.analytics;
+```
+
+The analytics resource provides methods to retrieve traffic and performance metrics for your Spectrum applications.
+
+## Types
+
+### DNS
+
+The name and type of DNS record for the Spectrum application.
+
+<ResponseField name="name" type="string">
+  The name of the DNS record associated with the application
+</ResponseField>
+
+<ResponseField name="type" type="'CNAME' | 'ADDRESS'">
+  The type of DNS record
+</ResponseField>
+
+### EdgeIPs
+
+The anycast edge IP configuration.
+
+**Dynamic configuration:**
+
+<ResponseField name="type" type="'dynamic'">
+  Dynamically allocated edge IPs using Spectrum anycast IPs
+</ResponseField>
+
+<ResponseField name="connectivity" type="'all' | 'ipv4' | 'ipv6'">
+  The IP versions supported for inbound connections
+</ResponseField>
+
+**Static configuration:**
+
+<ResponseField name="type" type="'static'">
+  Statically allocated edge IPs using customer IPs
+</ResponseField>
+
+<ResponseField name="ips" type="string[]">
+  The array of customer owned IPs broadcast via anycast
+</ResponseField>
+
+### OriginDNS
+
+The name and type of DNS record for the origin.
+
+<ResponseField name="name" type="string">
+  The name of the DNS record associated with the origin
+</ResponseField>
+
+<ResponseField name="type" type="'' | 'A' | 'AAAA' | 'SRV'">
+  The type of DNS record. Empty string specifies A/AAAA combination
+</ResponseField>
+
+<ResponseField name="ttl" type="number">
+  The TTL of DNS resolution in seconds
+</ResponseField>

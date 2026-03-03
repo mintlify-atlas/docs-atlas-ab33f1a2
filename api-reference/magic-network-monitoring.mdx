@@ -1,0 +1,156 @@
+---
+title: 'Magic Network Monitoring'
+description: 'API reference for Cloudflare Magic Network Monitoring'
+---
+
+## Overview
+
+Magic Network Monitoring provides visibility into network traffic and flow data. Monitor and analyze network flows, configure monitoring rules, and integrate with VPC flow logs.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Resources
+
+### VPC flows
+
+Manage VPC flow log collection and analysis.
+
+```typescript
+const vpcFlows = client.magicNetworkMonitoring.vpcFlows;
+```
+
+VPC Flows enable you to collect and analyze network flow logs from your Virtual Private Cloud environments.
+
+### Configs
+
+Manage Magic Network Monitoring configurations.
+
+```typescript
+const configs = client.magicNetworkMonitoring.configs;
+```
+
+Available methods:
+
+#### Create configuration
+
+Create a new monitoring configuration.
+
+```typescript
+const config = await client.magicNetworkMonitoring.configs.create(params);
+```
+
+#### Update configuration
+
+Update an existing monitoring configuration.
+
+```typescript
+const config = await client.magicNetworkMonitoring.configs.update(params);
+```
+
+#### Get configuration
+
+Retrieve a specific monitoring configuration.
+
+```typescript
+const config = await client.magicNetworkMonitoring.configs.get(params);
+```
+
+#### Delete configuration
+
+Delete a monitoring configuration.
+
+```typescript
+await client.magicNetworkMonitoring.configs.delete(params);
+```
+
+### Rules
+
+Define and manage network monitoring rules.
+
+```typescript
+const rules = client.magicNetworkMonitoring.rules;
+```
+
+Available methods:
+
+#### Create rule
+
+Create a new monitoring rule.
+
+```typescript
+const rule = await client.magicNetworkMonitoring.rules.create(params);
+```
+
+#### Update rule
+
+Update an existing monitoring rule.
+
+```typescript
+const rule = await client.magicNetworkMonitoring.rules.update(params);
+```
+
+#### List rules
+
+List all monitoring rules.
+
+```typescript
+const rules = await client.magicNetworkMonitoring.rules.list(params);
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+#### Get rule
+
+Retrieve a specific monitoring rule.
+
+```typescript
+const rule = await client.magicNetworkMonitoring.rules.get(ruleId, params);
+```
+
+#### Delete rule
+
+Delete a monitoring rule.
+
+```typescript
+await client.magicNetworkMonitoring.rules.delete(ruleId, params);
+```
+
+## Types
+
+### Configuration
+
+Monitoring configuration settings.
+
+<ResponseField name="id" type="string">
+  Configuration identifier
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether monitoring is enabled
+</ResponseField>
+
+### MagicNetworkMonitoringRule
+
+Network monitoring rule definition.
+
+<ResponseField name="id" type="string">
+  Rule identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Rule name
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether the rule is active
+</ResponseField>

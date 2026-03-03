@@ -1,0 +1,386 @@
+---
+title: File uploads
+description: Upload files using various methods and formats
+---
+
+The Cloudflare SDK supports multiple file upload methods to accommodate different runtime environments and use cases.
+
+## Supported file types
+
+Request parameters that accept file uploads support multiple formats:
+
+<CardGroup cols={2}>
+  <Card title="File API" icon="file">
+    Web-standard `File` objects or compatible structures
+  </Card>
+  <Card title="ReadStream" icon="stream">
+    Node.js `fs.ReadStream` for file system access
+  </Card>
+  <Card title="Response" icon="globe">
+    `fetch` Response objects or compatible structures
+  </Card>
+  <Card title="toFile Helper" icon="code">
+    SDK's `toFile()` helper for buffers and arrays
+  </Card>
+</CardGroup>
+
+## File upload methods
+
+<Tabs>
+  <Tab title="ReadStream (Node.js)">
+    Use `fs.createReadStream()` for optimal performance in Node.js:
+    
+    ```typescript
+    import fs from 'fs';
+    import Cloudflare from 'cloudflare';
+    
+    const client = new Cloudflare();
+    
+    await client.apiGateway.userSchemas.create({
+      zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+      file: fs.createReadStream('/path/to/schema.json'),
+      kind: 'openapi_v3',
+    });
+    ```
+    
+    <Note>
+    This is the recommended approach for Node.js environments as it streams the file without loading it entirely into memory.
+    </Note>
+  </Tab>
+  
+  <Tab title="File API (Browser)">
+    Use the web `File` API in browser environments:
+    
+    ```typescript
+    import Cloudflare from 'cloudflare';
+    
+    const client = new Cloudflare();
+    
+    // From a File input
+    const fileInput = document.querySelector('input[type="file"]');
+    const file = fileInput.files[0];
+    
+    await client.apiGateway.userSchemas.create({
+      zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+      file: file,
+      kind: 'openapi_v3',
+    });
+    
+    // Or create a File manually
+    await client.apiGateway.userSchemas.create({
+      zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+      file: new File(['my bytes'], 'schema.json', { type: 'application/json' }),
+      kind: 'openapi_v3',
+    });
+    ```
+  </Tab>
+  
+  <Tab title="Fetch Response">
+    Pass a `fetch` Response object directly:
+    
+    ```typescript
+    import fetch from 'node-fetch';
+    import Cloudflare from 'cloudflare';
+    
+    const client = new Cloudflare();
+    
+    await client.apiGateway.userSchemas.create({
+      zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+      file: await fetch('https://example.com/schema.json'),
+      kind: 'openapi_v3',
+    });
+    ```
+    
+    This is useful for proxying files from other services.
+  </Tab>
+  
+  <Tab title="toFile Helper">
+    Use the `toFile()` helper for buffers and typed arrays:
+    
+    ```typescript
+    import Cloudflare, { toFile } from 'cloudflare';
+    
+    const client = new Cloudflare();
+    
+    // From a Buffer
+    await client.apiGateway.userSchemas.create({
+      zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+      file: await toFile(Buffer.from('my bytes'), 'schema.json'),
+      kind: 'openapi_v3',
+    });
+    
+    // From a Uint8Array
+    await client.apiGateway.userSchemas.create({
+      zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+      file: await toFile(new Uint8Array([0, 1, 2]), 'schema.json'),
+      kind: 'openapi_v3',
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## The toFile helper
+
+The `toFile()` helper converts raw data into an uploadable format:
+
+```typescript
+import { toFile } from 'cloudflare';
+
+// Signature
+toFile(
+  data: Buffer | Uint8Array | ArrayBuffer,
+  filename: string,
+  options?: { type?: string }
+): Promise<File>
+```
+
+### Usage examples
+
+<CodeGroup>
+```typescript Buffer
+import { toFile } from 'cloudflare';
+
+const file = await toFile(
+  Buffer.from('file contents'),
+  'document.txt',
+  { type: 'text/plain' }
+);
+```
+
+```typescript Uint8Array
+import { toFile } from 'cloudflare';
+
+const bytes = new Uint8Array([72, 101, 108, 108, 111]);
+const file = await toFile(bytes, 'data.bin');
+```
+
+```typescript ArrayBuffer
+import { toFile } from 'cloudflare';
+
+const buffer = new ArrayBuffer(8);
+const file = await toFile(buffer, 'data.bin');
+```
+</CodeGroup>
+
+<ParamField path="data" type="Buffer | Uint8Array | ArrayBuffer" required>
+  Raw binary data to upload
+</ParamField>
+
+<ParamField path="filename" type="string" required>
+  Name for the uploaded file
+</ParamField>
+
+<ParamField path="options.type" type="string">
+  MIME type of the file (e.g., `"application/json"`)
+</ParamField>
+
+## Reading files from disk
+
+Use `fileFromPath()` to read files from the filesystem:
+
+```typescript
+import { fileFromPath } from 'cloudflare';
+
+const file = await fileFromPath('/path/to/schema.json');
+
+await client.apiGateway.userSchemas.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  file: file,
+  kind: 'openapi_v3',
+});
+```
+
+<Note>
+`fileFromPath()` is only available in Node.js environments.
+</Note>
+
+## Complete upload examples
+
+### API Gateway schema upload
+
+```typescript
+import fs from 'fs';
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Upload OpenAPI schema from file system
+const schema = await client.apiGateway.userSchemas.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  file: fs.createReadStream('./openapi.yaml'),
+  kind: 'openapi_v3',
+});
+
+console.log('Schema uploaded:', schema.schema_id);
+```
+
+### Dynamic file generation
+
+```typescript
+import Cloudflare, { toFile } from 'cloudflare';
+
+const client = new Cloudflare();
+
+// Generate schema programmatically
+const schemaData = {
+  openapi: '3.0.0',
+  info: {
+    title: 'My API',
+    version: '1.0.0',
+  },
+  paths: {},
+};
+
+const schemaJson = JSON.stringify(schemaData, null, 2);
+const file = await toFile(
+  Buffer.from(schemaJson),
+  'schema.json',
+  { type: 'application/json' }
+);
+
+await client.apiGateway.userSchemas.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  file: file,
+  kind: 'openapi_v3',
+});
+```
+
+### Remote file upload
+
+```typescript
+import fetch from 'node-fetch';
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare();
+
+// Download and upload in one step
+const remoteFile = await fetch('https://api.example.com/schema.json');
+
+await client.apiGateway.userSchemas.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  file: remoteFile,
+  kind: 'openapi_v3',
+});
+```
+
+## Multipart form data
+
+File uploads use multipart/form-data encoding automatically:
+
+```typescript
+// The SDK handles multipart encoding for you
+await client.apiGateway.userSchemas.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  file: fs.createReadStream('./schema.json'),
+  kind: 'openapi_v3',
+  // Other fields are encoded alongside the file
+});
+```
+
+<Note>
+The SDK automatically sets the correct `Content-Type: multipart/form-data` header and constructs the multipart body.
+</Note>
+
+## File metadata
+
+When using the `File` API or `toFile()`, you can specify metadata:
+
+```typescript
+// Using File constructor
+const file = new File(
+  ['content'],
+  'filename.txt',
+  {
+    type: 'text/plain',
+    lastModified: Date.now(),
+  }
+);
+
+// Using toFile helper
+const file = await toFile(
+  Buffer.from('content'),
+  'filename.txt',
+  { type: 'text/plain' }
+);
+```
+
+## Best practices
+
+<Steps>
+  <Step title="Use streams for large files">
+    In Node.js, prefer `fs.createReadStream()` to avoid loading entire files into memory:
+    
+    ```typescript
+    // Good: Streams the file
+    file: fs.createReadStream('/large/file.json')
+    
+    // Bad: Loads entire file into memory
+    file: await toFile(fs.readFileSync('/large/file.json'), 'file.json')
+    ```
+  </Step>
+  
+  <Step title="Set correct MIME types">
+    Specify the correct content type for better compatibility:
+    
+    ```typescript
+    const file = await toFile(
+      jsonBuffer,
+      'schema.json',
+      { type: 'application/json' }
+    );
+    ```
+  </Step>
+  
+  <Step title="Handle file errors">
+    Wrap file operations in try-catch blocks:
+    
+    ```typescript
+    try {
+      const file = fs.createReadStream('/path/to/file');
+      await client.apiGateway.userSchemas.create({
+        zone_id: zoneId,
+        file,
+        kind: 'openapi_v3',
+      });
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        console.error('File not found');
+      }
+      throw err;
+    }
+    ```
+  </Step>
+  
+  <Step title="Validate files before upload">
+    Check file size and format before initiating uploads:
+    
+    ```typescript
+    const stats = fs.statSync('/path/to/file');
+    if (stats.size > 10 * 1024 * 1024) {
+      throw new Error('File too large (max 10MB)');
+    }
+    ```
+  </Step>
+</Steps>
+
+## TypeScript types
+
+The SDK provides type definitions for uploadable values:
+
+```typescript
+type Uploadable = 
+  | File
+  | Blob  
+  | Response
+  | ReadStream
+  | { 
+      name?: string;
+      type?: string;
+      size?: number;
+      arrayBuffer(): Promise<ArrayBuffer>;
+    };
+```
+
+Any object matching this structure can be used for file uploads.

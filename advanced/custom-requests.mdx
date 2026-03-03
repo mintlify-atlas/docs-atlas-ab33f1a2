@@ -1,0 +1,71 @@
+---
+title: Making custom requests
+description: Use client.get, client.post, and other HTTP verbs to access undocumented endpoints
+---
+
+This library is typed for convenient access to the documented API. If you need to access undocumented endpoints, params, or response properties, the library can still be used.
+
+## Undocumented endpoints
+
+To make requests to undocumented endpoints, you can use `client.get`, `client.post`, and other HTTP verbs. Options on the client, such as retries, will be respected when making these requests.
+
+```ts
+await client.post('/some/path', {
+  body: { some_prop: 'foo' },
+  query: { some_query_arg: 'bar' },
+});
+```
+
+<Note>
+All client options like `maxRetries`, `timeout`, and authentication are automatically applied to custom requests.
+</Note>
+
+## Undocumented request params
+
+To make requests using undocumented parameters, you may use `// @ts-expect-error` on the undocumented parameter. This library doesn't validate at runtime that the request matches the type, so any extra values you send will be sent as-is.
+
+```ts
+client.foo.create({
+  foo: 'my_param',
+  bar: 12,
+  // @ts-expect-error baz is not yet public
+  baz: 'undocumented option',
+});
+```
+
+<Tip>
+For requests with the `GET` verb, any extra params will be in the query. All other requests will send the extra param in the body.
+</Tip>
+
+## Explicit request options
+
+If you want to explicitly send an extra argument, you can do so with the `query`, `body`, and `headers` request options.
+
+```ts
+await client.zones.create(
+  {
+    account: { id: '023e105f4ecef8ad9ca31a8372d0c353' },
+    name: 'example.com',
+    type: 'full',
+  },
+  {
+    query: { undocumented_param: 'value' },
+    headers: { 'X-Custom-Header': 'custom-value' },
+  }
+);
+```
+
+## Undocumented response properties
+
+To access undocumented response properties, you may access the response object with `// @ts-expect-error` on the response object, or cast the response object to the requisite type.
+
+```ts
+const zone = await client.zones.get({ zone_id: '023e105f4ecef8ad9ca31a8372d0c353' });
+
+// @ts-expect-error accessing undocumented property
+console.log(zone.undocumented_field);
+```
+
+<Warning>
+The library does not validate or strip extra properties from the response from the API.
+</Warning>

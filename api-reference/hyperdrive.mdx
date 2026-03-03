@@ -1,0 +1,345 @@
+---
+title: Hyperdrive
+description: Accelerate database access with Hyperdrive
+---
+
+Hyperdrive accelerates your existing database connections by caching queries and managing connection pooling. Use the API to create and manage Hyperdrive configurations.
+
+## Overview
+
+Access the Hyperdrive API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access Hyperdrive resources
+const hyperdrive = client.hyperdrive;
+```
+
+## Configurations
+
+Manage Hyperdrive database configurations.
+
+### Create a configuration
+
+Create a new Hyperdrive configuration for a database.
+
+```typescript
+const config = await client.hyperdrive.configs.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'my-database-config',
+  origin: {
+    host: 'database.example.com',
+    port: 5432,
+    database: 'myapp',
+    user: 'myuser',
+    scheme: 'postgres',
+  },
+  caching: {
+    disabled: false,
+    max_age: 60,
+    stale_while_revalidate: 15,
+  },
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Name for the Hyperdrive configuration
+</ParamField>
+
+<ParamField path="origin" type="object" required>
+  Database origin configuration
+</ParamField>
+
+<ParamField path="origin.host" type="string" required>
+  Database hostname or IP address
+</ParamField>
+
+<ParamField path="origin.port" type="number" required>
+  Database port (e.g., 5432 for PostgreSQL, 3306 for MySQL)
+</ParamField>
+
+<ParamField path="origin.database" type="string">
+  Database name
+</ParamField>
+
+<ParamField path="origin.user" type="string">
+  Database username
+</ParamField>
+
+<ParamField path="origin.scheme" type="string">
+  Database scheme: 'postgres', 'postgresql', or 'mysql'
+</ParamField>
+
+<ParamField path="caching" type="object">
+  Query caching configuration
+</ParamField>
+
+<ParamField path="caching.disabled" type="boolean">
+  Set to true to disable caching (default: false)
+</ParamField>
+
+<ParamField path="caching.max_age" type="number">
+  Maximum time in seconds to cache query results (default: 60)
+</ParamField>
+
+<ParamField path="caching.stale_while_revalidate" type="number">
+  Time in seconds to serve stale results while revalidating (default: 15)
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The configuration ID
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The configuration name
+</ResponseField>
+
+<ResponseField name="origin" type="object">
+  The database origin settings
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  ISO 8601 timestamp when the configuration was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  ISO 8601 timestamp when the configuration was last modified
+</ResponseField>
+
+### List configurations
+
+Retrieve all Hyperdrive configurations in your account.
+
+```typescript
+for await (const config of client.hyperdrive.configs.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(config);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Get a configuration
+
+Retrieve details about a specific Hyperdrive configuration.
+
+```typescript
+const config = await client.hyperdrive.configs.get(
+  'config-id',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="config_id" type="string" required>
+  The configuration ID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Update a configuration
+
+Update an existing Hyperdrive configuration.
+
+```typescript
+const config = await client.hyperdrive.configs.update(
+  'config-id',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    name: 'updated-config-name',
+    origin: {
+      host: 'new-database.example.com',
+      port: 5432,
+      database: 'myapp',
+      user: 'myuser',
+      scheme: 'postgres',
+    },
+    caching: {
+      disabled: false,
+      max_age: 120,
+    },
+  }
+);
+```
+
+<ParamField path="config_id" type="string" required>
+  The configuration ID to update
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="name" type="string">
+  Updated configuration name
+</ParamField>
+
+<ParamField path="origin" type="object">
+  Updated database origin settings
+</ParamField>
+
+<ParamField path="caching" type="object">
+  Updated caching settings
+</ParamField>
+
+### Delete a configuration
+
+Delete a Hyperdrive configuration.
+
+```typescript
+await client.hyperdrive.configs.delete(
+  'config-id',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="config_id" type="string" required>
+  The configuration ID to delete
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+## Advanced configuration
+
+### Cloudflare Access protected databases
+
+Connect to databases protected by Cloudflare Access:
+
+```typescript
+const config = await client.hyperdrive.configs.create({
+  account_id: accountId,
+  name: 'access-protected-db',
+  origin: {
+    host: 'database.example.com',
+    database: 'myapp',
+    user: 'myuser',
+    scheme: 'postgres',
+    access_client_id: 'your-access-client-id',
+  },
+});
+```
+
+<ParamField path="origin.access_client_id" type="string">
+  Cloudflare Access Client ID for authentication
+</ParamField>
+
+### Connection limits
+
+Configure maximum connections:
+
+```typescript
+const config = await client.hyperdrive.configs.create({
+  account_id: accountId,
+  name: 'my-config',
+  origin: {...},
+  origin_connection_limit: 100,
+});
+```
+
+<ParamField path="origin_connection_limit" type="number">
+  Maximum number of connections to the origin database (soft limit)
+</ParamField>
+
+### mTLS
+
+Configure mutual TLS for secure connections:
+
+```typescript
+const config = await client.hyperdrive.configs.create({
+  account_id: accountId,
+  name: 'secure-db',
+  origin: {...},
+  mtls: {
+    ca_certificate_id: 'ca-cert-id',
+    mtls_certificate_id: 'mtls-cert-id',
+    sslmode: 'verify-full',
+  },
+});
+```
+
+<ParamField path="mtls" type="object">
+  Mutual TLS configuration
+</ParamField>
+
+<ParamField path="mtls.ca_certificate_id" type="string">
+  CA certificate ID for verifying the database server
+</ParamField>
+
+<ParamField path="mtls.mtls_certificate_id" type="string">
+  Client certificate ID for mTLS authentication
+</ParamField>
+
+<ParamField path="mtls.sslmode" type="string">
+  SSL mode: 'require', 'verify-ca', or 'verify-full'
+</ParamField>
+
+## Using Hyperdrive in Workers
+
+Bind a Hyperdrive configuration to your Worker:
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    bindings: [
+      {
+        type: 'hyperdrive',
+        name: 'HYPERDRIVE',
+        id: 'config-id',
+      },
+    ],
+    modules: [...],
+  }
+);
+```
+
+Then connect from your Worker:
+
+```typescript
+import { Client } from 'pg';
+
+export default {
+  async fetch(request, env) {
+    // Connect using Hyperdrive
+    const client = new Client({
+      connectionString: env.HYPERDRIVE.connectionString,
+    });
+    
+    await client.connect();
+    
+    // Execute queries (automatically cached by Hyperdrive)
+    const result = await client.query('SELECT * FROM users LIMIT 10');
+    
+    await client.end();
+    
+    return Response.json(result.rows);
+  },
+};
+```
+
+## Best practices
+
+1. **Caching**: Enable caching for read-heavy workloads to reduce database load
+2. **Connection pooling**: Hyperdrive automatically manages connection pooling
+3. **Security**: Use mTLS for production databases
+4. **Access control**: Protect databases with Cloudflare Access for additional security
+5. **Query optimization**: Cache frequently accessed data with appropriate `max_age` values
+6. **Stale-while-revalidate**: Use this to serve cached results while fetching fresh data

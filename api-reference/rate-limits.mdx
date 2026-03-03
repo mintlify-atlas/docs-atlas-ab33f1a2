@@ -1,0 +1,299 @@
+---
+title: Rate limits
+description: Manage rate limiting rules to protect against DDoS and abusive traffic (deprecated)
+---
+
+<Warning>
+  The Rate Limiting API is deprecated in favor of using the Ruleset Engine. See the [deprecation notice](https://developers.cloudflare.com/fundamentals/api/reference/deprecations/#rate-limiting-api-previous-version) for full details.
+</Warning>
+
+The Rate Limits API allows you to create and manage rate limiting rules that protect your website against denial-of-service attacks, brute-force login attempts, and other types of abusive behavior.
+
+## Create a rate limit
+
+Creates a new rate limit for a zone.
+
+```typescript
+const rateLimit = await client.rateLimits.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  threshold: 60,
+  period: 60,
+  action: {
+    mode: 'challenge',
+  },
+  match: {
+    request: {
+      url: '*.example.com/path*',
+    },
+  },
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="threshold" type="number" required>
+  The threshold that triggers the rate limit mitigation. Configure this value along with the `period` property to establish a threshold per period.
+</ParamField>
+
+<ParamField path="period" type="number" required>
+  The time in seconds to count matching traffic. If the count exceeds the threshold within this period, Cloudflare performs the configured action.
+</ParamField>
+
+<ParamField path="action" type="object" required>
+  The action to perform when the threshold is exceeded.
+  
+  <ParamField path="mode" type="string" required>
+    The action to perform: `simulate`, `ban`, `challenge`, `js_challenge`, or `managed_challenge`
+  </ParamField>
+  
+  <ParamField path="timeout" type="number">
+    The time in seconds during which Cloudflare will perform the mitigation action. Must be greater than or equal to the period.
+  </ParamField>
+  
+  <ParamField path="response" type="object">
+    Custom response to return when threshold is exceeded.
+    
+    <ParamField path="content_type" type="string">
+      Content type: `text/plain`, `text/xml`, or `application/json`
+    </ParamField>
+    
+    <ParamField path="body" type="string">
+      The response body to return
+    </ParamField>
+  </ParamField>
+</ParamField>
+
+<ParamField path="match" type="object" required>
+  Determines which traffic the rate limit counts toward the threshold.
+  
+  <ParamField path="request" type="object">
+    Request matching criteria.
+    
+    <ParamField path="url" type="string">
+      URL pattern to match (e.g., `example.org/path*`). Use `*` for wildcards.
+    </ParamField>
+    
+    <ParamField path="methods" type="array">
+      HTTP methods to match: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, or `_ALL_`
+    </ParamField>
+    
+    <ParamField path="schemes" type="array">
+      HTTP schemes to match: `HTTP`, `HTTPS`, or `_ALL_`
+    </ParamField>
+  </ParamField>
+  
+  <ParamField path="response" type="object">
+    Response matching criteria.
+    
+    <ParamField path="origin_traffic" type="boolean">
+      When true, only uncached traffic served from origin servers counts toward rate limiting.
+    </ParamField>
+  </ParamField>
+  
+  <ParamField path="headers" type="array">
+    Array of header matching rules.
+    
+    <ParamField path="name" type="string">
+      The header name to match
+    </ParamField>
+    
+    <ParamField path="op" type="string">
+      Operator: `eq` (equal) or `ne` (not equal)
+    </ParamField>
+    
+    <ParamField path="value" type="string">
+      The header value to match
+    </ParamField>
+  </ParamField>
+</ParamField>
+
+<ParamField path="description" type="string">
+  An informative summary of the rate limit rule.
+</ParamField>
+
+<ParamField path="disabled" type="boolean">
+  When true, the rate limit is currently disabled.
+</ParamField>
+
+<ParamField path="bypass" type="array">
+  Criteria specifying when the rate limit should be bypassed.
+  
+  <ParamField path="name" type="string">
+    Set to `url` for URL-based bypass
+  </ParamField>
+  
+  <ParamField path="value" type="string">
+    The URL to bypass
+  </ParamField>
+</ParamField>
+
+<ResponseField name="id" type="string">
+  The unique identifier of the rate limit
+</ResponseField>
+
+<ResponseField name="action" type="object">
+  The configured action
+</ResponseField>
+
+<ResponseField name="threshold" type="number">
+  The request threshold
+</ResponseField>
+
+<ResponseField name="period" type="number">
+  The time period in seconds
+</ResponseField>
+
+<ResponseField name="match" type="object">
+  The traffic matching criteria
+</ResponseField>
+
+<ResponseField name="disabled" type="boolean">
+  Whether the rate limit is disabled
+</ResponseField>
+
+## List rate limits
+
+Fetches all rate limits for a zone.
+
+```typescript
+for await (const rateLimit of client.rateLimits.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(rateLimit.id);
+}
+```
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number of paginated results
+</ParamField>
+
+<ParamField path="per_page" type="number">
+  Number of items per page
+</ParamField>
+
+## Get a rate limit
+
+Fetches details of a single rate limit.
+
+```typescript
+const rateLimit = await client.rateLimits.get(
+  'rate_limit_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="rateLimitId" type="string" required>
+  The rate limit identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Update a rate limit
+
+Updates an existing rate limit.
+
+```typescript
+const rateLimit = await client.rateLimits.edit(
+  'rate_limit_id',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    threshold: 100,
+    period: 60,
+    action: {
+      mode: 'ban',
+      timeout: 300,
+    },
+    match: {
+      request: {
+        url: '*.example.com/api/*',
+      },
+    },
+  },
+);
+```
+
+<ParamField path="rateLimitId" type="string" required>
+  The rate limit identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Delete a rate limit
+
+Deletes an existing rate limit.
+
+```typescript
+await client.rateLimits.delete(
+  'rate_limit_id',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="rateLimitId" type="string" required>
+  The rate limit identifier
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  The zone identifier
+</ParamField>
+
+## Example: Protect login endpoint
+
+```typescript
+const rateLimit = await client.rateLimits.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  description: 'Protect login from brute force',
+  threshold: 5,
+  period: 60,
+  action: {
+    mode: 'challenge',
+    timeout: 600,
+  },
+  match: {
+    request: {
+      url: 'example.com/login',
+      methods: ['POST'],
+    },
+  },
+});
+```
+
+## Example: API rate limiting with custom response
+
+```typescript
+const rateLimit = await client.rateLimits.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  description: 'API rate limit',
+  threshold: 1000,
+  period: 60,
+  action: {
+    mode: 'simulate',
+    response: {
+      content_type: 'application/json',
+      body: JSON.stringify({
+        error: 'Rate limit exceeded',
+        retry_after: 60,
+      }),
+    },
+  },
+  match: {
+    request: {
+      url: 'api.example.com/*',
+    },
+  },
+});
+```
+
+## Migration to Ruleset Engine
+
+For new implementations, use the [Ruleset Engine](https://developers.cloudflare.com/ruleset-engine/) instead of the deprecated Rate Limiting API. The Ruleset Engine provides more flexible and powerful rate limiting capabilities through custom rules.

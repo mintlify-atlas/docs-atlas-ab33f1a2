@@ -1,0 +1,128 @@
+---
+title: Installation
+description: Install the Cloudflare TypeScript SDK in your project
+---
+
+# Installation
+
+The Cloudflare TypeScript SDK is available on npm and can be installed using your preferred package manager.
+
+## Package managers
+
+<CodeGroup>
+
+```bash npm
+npm install cloudflare
+```
+
+```bash yarn
+yarn add cloudflare
+```
+
+```bash pnpm
+pnpm add cloudflare
+```
+
+```bash bun
+bun add cloudflare
+```
+
+</CodeGroup>
+
+## Requirements
+
+Before installing the SDK, ensure your environment meets these requirements:
+
+### TypeScript version
+
+TypeScript >= 4.5 is required for full type safety and modern language features.
+
+### Runtime environment
+
+The SDK supports the following JavaScript runtimes:
+
+- **Node.js**: 18 LTS or later ([non-EOL](https://endoflife.date/nodejs) versions)
+- **Deno**: v1.28.0 or higher
+- **Bun**: 1.0 or later
+- **Browsers**: Up-to-date Chrome, Firefox, Safari, Edge, and more
+- **Cloudflare Workers**: All versions
+- **Vercel Edge Runtime**: All versions
+- **Jest**: 28 or greater with the `"node"` environment
+- **Nitro**: v2.6 or greater
+
+<Warning>
+  React Native is not currently supported. If you need React Native support, please open or upvote an issue on [GitHub](https://github.com/cloudflare/cloudflare-typescript/issues).
+</Warning>
+
+## Package information
+
+The installed package includes:
+
+- Full TypeScript type definitions
+- CommonJS and ES Module builds
+- Tree-shakeable exports for optimal bundle size
+- Runtime-specific shims for Node.js, Deno, Bun, and browsers
+
+### Package details
+
+```json
+{
+  "name": "cloudflare",
+  "version": "6.0.0-beta.1",
+  "description": "The official TypeScript library for the Cloudflare API",
+  "author": "Cloudflare <api@cloudflare.com>",
+  "license": "Apache-2.0"
+}
+```
+
+## Runtime-specific configuration
+
+### Using web fetch in Node.js
+
+By default, the SDK uses `node-fetch` in Node.js environments. If you prefer to use the global web-standard `fetch` function (available with `--experimental-fetch` or in frameworks like Next.js), add this import before importing the SDK:
+
+```typescript
+// Tell TypeScript and the package to use the global web fetch instead of node-fetch.
+// Note: This does not add polyfills, but expects them to be provided if needed.
+import 'cloudflare/shims/web';
+import Cloudflare from 'cloudflare';
+```
+
+### Using Node.js fetch explicitly
+
+To explicitly use Node.js polyfills (which does import polyfills), use:
+
+```typescript
+import 'cloudflare/shims/node';
+import Cloudflare from 'cloudflare';
+```
+
+<Tip>
+  This can be useful if you're getting incorrect TypeScript types for `Response` in your editor.
+</Tip>
+
+## Bundle size
+
+The SDK is optimized for minimal bundle size with tree-shaking support. The minified and gzipped size is shown in the npm badge on the [GitHub repository](https://github.com/cloudflare/cloudflare-typescript).
+
+## Verifying installation
+
+After installation, verify the SDK is working by running a simple test:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+console.log(Cloudflare.VERSION); // Should output the version number
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Make your first API call in minutes
+  </Card>
+  
+  <Card title="Authentication" icon="key" href="/authentication">
+    Set up your API credentials
+  </Card>
+</CardGroup>

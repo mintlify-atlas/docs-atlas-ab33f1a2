@@ -1,0 +1,402 @@
+---
+title: Stream
+description: Upload, manage, and deliver videos with Cloudflare Stream
+---
+
+Cloudflare Stream is a video streaming platform that handles encoding, storage, and delivery. The Stream API allows you to upload and manage videos programmatically.
+
+## Upload a video
+
+Initiates a video upload using the TUS protocol.
+
+```typescript
+await client.stream.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  body: {},
+  'Tus-Resumable': '1.0.0',
+  'Upload-Length': 1024000,
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  The account identifier
+</ParamField>
+
+<ParamField path="Tus-Resumable" type="string" required>
+  TUS protocol version (set to "1.0.0")
+</ParamField>
+
+<ParamField path="Upload-Length" type="number" required>
+  The size of the upload in bytes
+</ParamField>
+
+<ParamField path="Upload-Metadata" type="string">
+  Base64-encoded metadata about the upload
+</ParamField>
+
+<ParamField path="Upload-Creator" type="string">
+  A user-defined identifier for the media creator
+</ParamField>
+
+<ParamField path="direct_user" type="string">
+  The user ID for direct upload
+</ParamField>
+
+## List videos
+
+Lists up to 1000 videos from a single request.
+
+```typescript
+for await (const video of client.stream.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(video.uid, video.meta?.name);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  The account identifier
+</ParamField>
+
+<ParamField path="creator" type="string">
+  Filter by creator ID
+</ParamField>
+
+<ParamField path="search" type="string">
+  Search videos by name
+</ParamField>
+
+<ParamField path="start" type="string">
+  Start of the range (RFC 3339 timestamp)
+</ParamField>
+
+<ParamField path="end" type="string">
+  End of the range (RFC 3339 timestamp)
+</ParamField>
+
+<ParamField path="include_counts" type="boolean">
+  Include total count of videos
+</ParamField>
+
+<ResponseField name="uid" type="string">
+  The unique video identifier
+</ResponseField>
+
+<ResponseField name="allowedOrigins" type="array">
+  List of origins allowed to display the video
+</ResponseField>
+
+<ResponseField name="created" type="string">
+  The date and time the video was created
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  The duration of the video in seconds (-1 if unknown)
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  User modifiable key-value store for managing videos
+</ResponseField>
+
+<ResponseField name="readyToStream" type="boolean">
+  Indicates whether the video is playable
+</ResponseField>
+
+<ResponseField name="status" type="object">
+  Video processing status
+</ResponseField>
+
+<ResponseField name="thumbnail" type="string">
+  URL of the video thumbnail
+</ResponseField>
+
+<ResponseField name="preview" type="string">
+  The video's preview page URI
+</ResponseField>
+
+## Get a video
+
+Fetches details for a single video.
+
+```typescript
+const video = await client.stream.get(
+  'ea95132c15732412d22c1476fa83f27a',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="identifier" type="string" required>
+  The video identifier
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  The account identifier
+</ParamField>
+
+## Edit a video
+
+Edit details for a single video.
+
+```typescript
+const video = await client.stream.edit(
+  'ea95132c15732412d22c1476fa83f27a',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    meta: {
+      name: 'My Updated Video',
+      description: 'A great video',
+    },
+    allowedOrigins: ['example.com'],
+  },
+);
+```
+
+<ParamField path="identifier" type="string" required>
+  The video identifier
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  The account identifier
+</ParamField>
+
+<ParamField path="meta" type="object">
+  User modifiable key-value metadata
+</ParamField>
+
+<ParamField path="allowedOrigins" type="array">
+  List of allowed origin domains. Use `["*"]` for wildcard.
+</ParamField>
+
+<ParamField path="requireSignedURLs" type="boolean">
+  Whether the video requires signed URLs for viewing
+</ParamField>
+
+<ParamField path="thumbnailTimestampPct" type="number">
+  The timestamp percentage for the video thumbnail (0.0 to 1.0)
+</ParamField>
+
+## Delete a video
+
+Deletes a video and its copies from Cloudflare Stream.
+
+```typescript
+await client.stream.delete(
+  'ea95132c15732412d22c1476fa83f27a',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+<ParamField path="identifier" type="string" required>
+  The video identifier
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  The account identifier
+</ParamField>
+
+## Direct uploads
+
+Create a unique one-time upload URL for direct user uploads.
+
+```typescript
+const upload = await client.stream.directUpload.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  maxDurationSeconds: 3600,
+  requireSignedURLs: true,
+  allowedOrigins: ['example.com'],
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  The account identifier
+</ParamField>
+
+<ParamField path="maxDurationSeconds" type="number">
+  Maximum video duration in seconds
+</ParamField>
+
+<ParamField path="requireSignedURLs" type="boolean">
+  Whether uploaded videos require signed URLs
+</ParamField>
+
+<ParamField path="allowedOrigins" type="array">
+  Origins allowed to display the uploaded videos
+</ParamField>
+
+<ParamField path="meta" type="object">
+  Metadata to associate with the uploaded video
+</ParamField>
+
+<ParamField path="expiry" type="string">
+  Expiration time for the upload URL (RFC 3339)
+</ParamField>
+
+## Live inputs
+
+Manage live streaming inputs.
+
+```typescript
+// Create a live input
+const liveInput = await client.stream.liveInputs.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  meta: { name: 'My Live Stream' },
+  recording: {
+    mode: 'automatic',
+  },
+});
+
+// List live inputs
+for await (const input of client.stream.liveInputs.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(input.uid, input.meta?.name);
+}
+
+// Get a live input
+const input = await client.stream.liveInputs.get(
+  'live_input_id',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+## Watermarks
+
+Manage video watermarks.
+
+```typescript
+// Upload a watermark
+const watermark = await client.stream.watermarks.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  file: watermarkFile,
+});
+
+// List watermarks
+for await (const watermark of client.stream.watermarks.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(watermark.uid);
+}
+
+// Delete a watermark
+await client.stream.watermarks.delete(
+  'watermark_id',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+## Captions and subtitles
+
+Manage video captions.
+
+```typescript
+// Get captions for a video
+for await (const caption of client.stream.captions.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  identifier: 'video_id',
+})) {
+  console.log(caption.language);
+}
+```
+
+## Audio tracks
+
+Manage multiple audio tracks for videos.
+
+```typescript
+// Copy audio from another video
+const audio = await client.stream.audioTracks.copy({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  identifier: 'destination_video_id',
+  audio: {
+    source_video_id: 'source_video_id',
+  },
+});
+
+// Delete an audio track
+await client.stream.audioTracks.delete(
+  'video_id',
+  'audio_track_id',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+## Webhooks
+
+Manage webhooks for Stream events.
+
+```typescript
+// Get webhook configuration
+const webhook = await client.stream.webhooks.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// Update webhook
+await client.stream.webhooks.update({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  notificationUrl: 'https://example.com/webhook',
+});
+
+// Delete webhook
+await client.stream.webhooks.delete({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+## Signing keys
+
+Manage signing keys for signed URLs.
+
+```typescript
+// Create a signing key
+const key = await client.stream.keys.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+
+// List signing keys
+for await (const key of client.stream.keys.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(key.id);
+}
+
+// Delete a signing key
+await client.stream.keys.delete(
+  'key_id',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+);
+```
+
+## Downloads
+
+Manage video downloads.
+
+```typescript
+// Create a download
+const download = await client.stream.downloads.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  identifier: 'video_id',
+});
+
+// Get download status
+const status = await client.stream.downloads.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  identifier: 'video_id',
+});
+
+// Delete downloads
+await client.stream.downloads.delete({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  identifier: 'video_id',
+});
+```
+
+## Get storage usage
+
+Get information about video storage usage.
+
+```typescript
+const usage = await client.stream.videos.storageUsage({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  creator: 'creator_id',
+});
+```

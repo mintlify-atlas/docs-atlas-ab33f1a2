@@ -1,0 +1,202 @@
+---
+title: Organizations
+description: Manage Cloudflare organizations and their hierarchies
+---
+
+The Organizations API allows you to create, manage, and organize hierarchical structures for your Cloudflare resources. Organizations are currently in Closed Beta.
+
+## Create organization
+
+Create a new organization for a user.
+
+```typescript
+const organization = await client.organizations.create({
+  name: 'Acme Corporation',
+  profile: {
+    business_name: 'Acme Corp',
+    business_email: 'contact@acme.com',
+    business_address: '123 Main St',
+    business_phone: '+1-555-0100',
+    external_metadata: '{}'
+  }
+});
+```
+
+<ParamField body="name" type="string" required>
+  The name of the organization
+</ParamField>
+
+<ParamField body="parent" type="object">
+  Parent organization reference
+  <Expandable>
+    <ParamField body="id" type="string" required>
+      Parent organization identifier
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="profile" type="object">
+  Organization profile information
+  <Expandable>
+    <ParamField body="business_name" type="string" required>
+      Legal business name
+    </ParamField>
+    <ParamField body="business_email" type="string" required>
+      Business contact email
+    </ParamField>
+    <ParamField body="business_address" type="string" required>
+      Business address
+    </ParamField>
+    <ParamField body="business_phone" type="string" required>
+      Business phone number
+    </ParamField>
+    <ParamField body="external_metadata" type="string" required>
+      External metadata for the organization
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Organization identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Organization name
+</ResponseField>
+
+<ResponseField name="create_time" type="string">
+  ISO 8601 timestamp when the organization was created
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Organization metadata
+  <Expandable>
+    <ResponseField name="flags" type="object">
+      Feature flags for the organization
+    </ResponseField>
+    <ResponseField name="managed_by" type="string">
+      Entity managing the organization
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="parent" type="object">
+  Parent organization details
+  <Expandable>
+    <ResponseField name="id" type="string">
+      Parent organization ID
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Parent organization name
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="profile" type="object">
+  Organization profile information
+</ResponseField>
+
+## Update organization
+
+Modify an existing organization.
+
+```typescript
+const organization = await client.organizations.update(
+  'f1234567890abcdef1234567890abcde',
+  {
+    name: 'Acme Corporation Updated',
+    profile: {
+      business_name: 'Acme Corp',
+      business_email: 'info@acme.com',
+      business_address: '456 Market St',
+      business_phone: '+1-555-0200',
+      external_metadata: '{}'
+    }
+  }
+);
+```
+
+## List organizations
+
+Retrieve a list of organizations a particular user has access to.
+
+```typescript
+for await (const organization of client.organizations.list()) {
+  console.log(organization.name);
+}
+```
+
+<ParamField query="id" type="string[]">
+  Filter by organization IDs
+</ParamField>
+
+<ParamField query="name" type="object">
+  Filter by organization name
+  <Expandable>
+    <ParamField query="contains" type="string">
+      Name contains this string (case-insensitive)
+    </ParamField>
+    <ParamField query="startsWith" type="string">
+      Name starts with this string (case-insensitive)
+    </ParamField>
+    <ParamField query="endsWith" type="string">
+      Name ends with this string (case-insensitive)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField query="containing" type="object">
+  Filter by contained resources
+  <Expandable>
+    <ParamField query="account" type="string">
+      Filter to organizations containing this account
+    </ParamField>
+    <ParamField query="organization" type="string">
+      Filter to organizations containing this sub-organization
+    </ParamField>
+    <ParamField query="user" type="string">
+      Filter to organizations containing this user
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField query="parent" type="object">
+  Filter by parent organization
+  <Expandable>
+    <ParamField query="id" type="string">
+      Parent organization ID (use "null" for root organizations)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField query="page_size" type="number">
+  Number of items to return (default: 10)
+</ParamField>
+
+<ParamField query="page_token" type="string">
+  Pagination token from previous response
+</ParamField>
+
+## Get organization
+
+Retrieve the details of a specific organization.
+
+```typescript
+const organization = await client.organizations.get(
+  'f1234567890abcdef1234567890abcde'
+);
+```
+
+## Delete organization
+
+Delete an organization. The organization must be empty (no sub-organizations, accounts, members, or users).
+
+```typescript
+const result = await client.organizations.delete(
+  'f1234567890abcdef1234567890abcde'
+);
+```
+
+<ResponseField name="id" type="string">
+  ID of the deleted organization
+</ResponseField>

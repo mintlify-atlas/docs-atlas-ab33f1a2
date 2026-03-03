@@ -1,0 +1,308 @@
+---
+title: 'Email Routing'
+description: 'API reference for Cloudflare Email Routing'
+---
+
+## Overview
+
+Cloudflare Email Routing allows you to create custom email addresses for your domain and route them to your preferred email inbox. Manage routing rules, destination addresses, and DNS records.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Settings
+
+Manage Email Routing settings for a zone.
+
+### Get settings
+
+Get information about Email Routing settings for your zone.
+
+```typescript
+const settings = await client.emailRouting.get({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Email Routing settings identifier
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  State of Email Routing (enabled or disabled)
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Domain of your zone
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Account status: `ready`, `unconfigured`, `misconfigured`, `misconfigured/locked`, or `unlocked`
+</ResponseField>
+
+<ResponseField name="created" type="string">
+  When the settings were created
+</ResponseField>
+
+<ResponseField name="modified" type="string">
+  When the settings were last modified
+</ResponseField>
+
+<ResponseField name="skip_wizard" type="boolean">
+  Whether the user skipped the configuration wizard
+</ResponseField>
+
+### Enable Email Routing (deprecated)
+
+Enable Email Routing for your zone. This adds and locks necessary MX and SPF records.
+
+```typescript
+const settings = await client.emailRouting.enable({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  body: {},
+});
+```
+
+### Disable Email Routing (deprecated)
+
+Disable Email Routing for your zone. This removes additional MX records.
+
+```typescript
+const settings = await client.emailRouting.disable({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  body: {},
+});
+```
+
+## Rules
+
+Manage email routing rules.
+
+### Create a rule
+
+Create a new routing rule.
+
+```typescript
+const rule = await client.emailRouting.rules.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  matchers: [
+    {
+      type: 'literal',
+      field: 'to',
+      value: 'test@example.com',
+    },
+  ],
+  actions: [
+    {
+      type: 'forward',
+      value: ['destination@example.com'],
+    },
+  ],
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="matchers" type="array" required>
+  Matching rules to filter emails
+</ParamField>
+
+<ParamField path="actions" type="array" required>
+  Actions to perform on matched emails
+</ParamField>
+
+<ParamField path="enabled" type="boolean">
+  Whether the rule is enabled (default: true)
+</ParamField>
+
+<ParamField path="name" type="string">
+  Rule name
+</ParamField>
+
+<ParamField path="priority" type="number">
+  Rule priority (lower values execute first)
+</ParamField>
+
+### Update a rule
+
+Update an existing routing rule.
+
+```typescript
+const rule = await client.emailRouting.rules.update(
+  ruleId,
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    // updated fields
+  }
+);
+```
+
+### List rules
+
+List all routing rules for a zone.
+
+```typescript
+const rules = await client.emailRouting.rules.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Get a rule
+
+Get details of a specific routing rule.
+
+```typescript
+const rule = await client.emailRouting.rules.get(
+  ruleId,
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete a rule
+
+Delete a routing rule.
+
+```typescript
+await client.emailRouting.rules.delete(
+  ruleId,
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Addresses
+
+Manage destination email addresses.
+
+### Create an address
+
+Add a verified destination address.
+
+```typescript
+const address = await client.emailRouting.addresses.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  email: 'user@example.com',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField path="email" type="string" required>
+  The email address to verify and use as a destination
+</ParamField>
+
+### List addresses
+
+List all verified destination addresses.
+
+```typescript
+const addresses = await client.emailRouting.addresses.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Get an address
+
+Get details of a destination address.
+
+```typescript
+const address = await client.emailRouting.addresses.get(
+  addressId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete an address
+
+Remove a destination address.
+
+```typescript
+await client.emailRouting.addresses.delete(
+  addressId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## DNS
+
+Manage DNS records for Email Routing.
+
+```typescript
+const dns = client.emailRouting.dns;
+```
+
+The DNS resource provides methods for managing MX and other DNS records required for Email Routing.
+
+## Types
+
+### Matcher
+
+Defines how to match incoming emails.
+
+<ResponseField name="type" type="'literal' | 'all'">
+  Matcher type
+</ResponseField>
+
+<ResponseField name="field" type="'to' | 'from'">
+  Email field to match against
+</ResponseField>
+
+<ResponseField name="value" type="string">
+  Value to match (for literal matchers)
+</ResponseField>
+
+### Action
+
+Defines what to do with matched emails.
+
+<ResponseField name="type" type="'forward' | 'worker' | 'drop'">
+  Action type
+</ResponseField>
+
+<ResponseField name="value" type="string[]">
+  Destination addresses (for forward action)
+</ResponseField>
+
+### EmailRoutingRule
+
+<ResponseField name="id" type="string">
+  Rule identifier
+</ResponseField>
+
+<ResponseField name="tag" type="string">
+  Rule tag
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Rule name
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether the rule is active
+</ResponseField>
+
+<ResponseField name="matchers" type="Matcher[]">
+  Matching conditions
+</ResponseField>
+
+<ResponseField name="actions" type="Action[]">
+  Actions to perform
+</ResponseField>
+
+<ResponseField name="priority" type="number">
+  Rule priority
+</ResponseField>

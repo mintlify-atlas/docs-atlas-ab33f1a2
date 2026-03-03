@@ -1,122 +1,155 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Cloudflare TypeScript SDK",
+  "theme": "aspen",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#F38020",
+    "light": "#FFA94D",
+    "dark": "#E87000"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/cloudflare/cloudflare-typescript"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/cloudflare/cloudflare-typescript"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
+              "introduction",
+              "installation",
               "quickstart",
-              "development"
+              "authentication"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "core-concepts/client-configuration",
+              "core-concepts/error-handling",
+              "core-concepts/pagination",
+              "core-concepts/file-uploads",
+              "core-concepts/timeouts-retries"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Advanced Usage",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "advanced/custom-requests",
+              "advanced/middleware",
+              "advanced/typescript-types",
+              "advanced/raw-responses"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Migration Guides",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "migration/v6-migration"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core Resources",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/accounts",
+              "api-reference/zones",
+              "api-reference/dns",
+              "api-reference/ssl",
+              "api-reference/firewall"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Workers & Serverless",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/workers",
+              "api-reference/workers-for-platforms",
+              "api-reference/kv",
+              "api-reference/durable-objects",
+              "api-reference/queues",
+              "api-reference/d1",
+              "api-reference/r2",
+              "api-reference/vectorize",
+              "api-reference/hyperdrive",
+              "api-reference/workflows",
+              "api-reference/ai",
+              "api-reference/ai-gateway"
+            ]
+          },
+          {
+            "group": "Application Services",
+            "pages": [
+              "api-reference/load-balancers",
+              "api-reference/cache",
+              "api-reference/page-rules",
+              "api-reference/waiting-rooms",
+              "api-reference/rate-limits",
+              "api-reference/stream",
+              "api-reference/images"
+            ]
+          },
+          {
+            "group": "Security & Access",
+            "pages": [
+              "api-reference/zero-trust",
+              "api-reference/turnstile",
+              "api-reference/page-shield",
+              "api-reference/bot-management",
+              "api-reference/api-gateway",
+              "api-reference/security-center",
+              "api-reference/leaked-credential-checks"
+            ]
+          },
+          {
+            "group": "Network Services",
+            "pages": [
+              "api-reference/magic-transit",
+              "api-reference/magic-network-monitoring",
+              "api-reference/magic-cloud-networking",
+              "api-reference/spectrum",
+              "api-reference/argo",
+              "api-reference/connectivity"
+            ]
+          },
+          {
+            "group": "Developer Platform",
+            "pages": [
+              "api-reference/pages",
+              "api-reference/email-routing",
+              "api-reference/logpush",
+              "api-reference/logs",
+              "api-reference/alerting",
+              "api-reference/rum",
+              "api-reference/zaraz"
+            ]
+          },
+          {
+            "group": "Management & Monitoring",
+            "pages": [
+              "api-reference/organizations",
+              "api-reference/memberships",
+              "api-reference/user",
+              "api-reference/audit-logs",
+              "api-reference/billing",
+              "api-reference/healthchecks",
+              "api-reference/diagnostics"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

@@ -1,0 +1,192 @@
+---
+title: Billing
+description: Access billing profiles and payment information
+---
+
+The Billing API provides access to billing profiles for Cloudflare accounts.
+
+## Get billing profile
+
+Retrieve the current billing profile for an account.
+
+<Warning>
+This endpoint is deprecated. Please use the new billing API endpoints when they become available.
+</Warning>
+
+```typescript
+const profile = await client.billing.profiles.get({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+## Response fields
+
+<ResponseField name="id" type="string">
+  Billing item identifier tag
+</ResponseField>
+
+<ResponseField name="first_name" type="string">
+  Account holder's first name
+</ResponseField>
+
+<ResponseField name="last_name" type="string">
+  Account holder's last name
+</ResponseField>
+
+<ResponseField name="address" type="string">
+  Billing address line 1
+</ResponseField>
+
+<ResponseField name="address2" type="string">
+  Billing address line 2
+</ResponseField>
+
+<ResponseField name="city" type="string">
+  City
+</ResponseField>
+
+<ResponseField name="state" type="string">
+  State or province
+</ResponseField>
+
+<ResponseField name="zipcode" type="string">
+  Postal code
+</ResponseField>
+
+<ResponseField name="country" type="string">
+  Country code
+</ResponseField>
+
+<ResponseField name="telephone" type="string">
+  Contact telephone number
+</ResponseField>
+
+<ResponseField name="company" type="string">
+  Company name
+</ResponseField>
+
+<ResponseField name="primary_email" type="string">
+  Primary contact email
+</ResponseField>
+
+<ResponseField name="account_type" type="string">
+  Type of account
+</ResponseField>
+
+<ResponseField name="balance" type="string">
+  Current account balance
+</ResponseField>
+
+<ResponseField name="card_number" type="string">
+  Masked credit card number
+</ResponseField>
+
+<ResponseField name="card_expiry_month" type="number">
+  Credit card expiry month
+</ResponseField>
+
+<ResponseField name="card_expiry_year" type="number">
+  Credit card expiry year
+</ResponseField>
+
+<ResponseField name="payment_gateway" type="string">
+  Payment gateway used
+</ResponseField>
+
+<ResponseField name="payment_email" type="string">
+  Email for payment notifications
+</ResponseField>
+
+<ResponseField name="payment_first_name" type="string">
+  Payment contact first name
+</ResponseField>
+
+<ResponseField name="payment_last_name" type="string">
+  Payment contact last name
+</ResponseField>
+
+<ResponseField name="payment_address" type="string">
+  Payment address line 1
+</ResponseField>
+
+<ResponseField name="payment_address2" type="string">
+  Payment address line 2
+</ResponseField>
+
+<ResponseField name="payment_city" type="string">
+  Payment city
+</ResponseField>
+
+<ResponseField name="payment_state" type="string">
+  Payment state or province
+</ResponseField>
+
+<ResponseField name="payment_zipcode" type="string">
+  Payment postal code
+</ResponseField>
+
+<ResponseField name="payment_country" type="string">
+  Payment country code
+</ResponseField>
+
+<ResponseField name="vat" type="string">
+  VAT number
+</ResponseField>
+
+<ResponseField name="tax_id_type" type="string">
+  Type of tax ID
+</ResponseField>
+
+<ResponseField name="next_bill_date" type="string">
+  Date of next billing cycle
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  When the billing profile was created
+</ResponseField>
+
+<ResponseField name="edited_on" type="string">
+  When the billing profile was last edited
+</ResponseField>
+
+<ResponseField name="is_partner" type="boolean">
+  Indicates if this is a partner account
+</ResponseField>
+
+<ResponseField name="enterprise_billing_email" type="string">
+  Enterprise billing contact email
+</ResponseField>
+
+<ResponseField name="enterprise_primary_email" type="string">
+  Enterprise primary contact email
+</ResponseField>
+
+## Example response
+
+```json
+{
+  "id": "0d38eaae9f2b95f6e4af3c80fe3a097c",
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "address": "123 Main Street",
+  "city": "San Francisco",
+  "state": "CA",
+  "zipcode": "94107",
+  "country": "US",
+  "telephone": "+1-555-867-5309",
+  "company": "Acme Corporation",
+  "primary_email": "billing@example.com",
+  "account_type": "business",
+  "balance": "0.00",
+  "card_number": "xxxx-xxxx-xxxx-1234",
+  "card_expiry_month": 12,
+  "card_expiry_year": 2025,
+  "payment_gateway": "stripe",
+  "created_on": "2023-01-15T10:30:00Z",
+  "edited_on": "2024-02-20T14:45:00Z"
+}
+```

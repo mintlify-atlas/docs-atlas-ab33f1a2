@@ -1,0 +1,380 @@
+---
+title: Queues
+description: Send and receive messages with Cloudflare Queues
+---
+
+Cloudflare Queues is a global message queuing service. Use the API to create queues, send messages, and manage consumers.
+
+## Overview
+
+Access the Queues API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access Queues resources
+const queues = client.queues;
+```
+
+## Queues
+
+Manage queue creation and configuration.
+
+### Create a queue
+
+Create a new queue.
+
+```typescript
+const queue = await client.queues.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  queue_name: 'my-queue',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="queue_name" type="string" required>
+  Name for the queue
+</ParamField>
+
+<ResponseField name="queue_id" type="string">
+  The unique identifier for the queue
+</ResponseField>
+
+<ResponseField name="queue_name" type="string">
+  The queue name
+</ResponseField>
+
+<ResponseField name="created_on" type="string">
+  ISO 8601 timestamp when the queue was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string">
+  ISO 8601 timestamp when the queue was last modified
+</ResponseField>
+
+### List queues
+
+Retrieve all queues in your account.
+
+```typescript
+for await (const queue of client.queues.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(queue);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Get a queue
+
+Retrieve details about a specific queue.
+
+```typescript
+const queue = await client.queues.get(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Update a queue
+
+Update queue configuration.
+
+```typescript
+const queue = await client.queues.update(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    queue_name: 'updated-queue-name',
+    settings: {
+      delivery_delay: 0,
+      message_retention_period: 345600, // 4 days
+    },
+  }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID to update
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="queue_name" type="string">
+  The new queue name
+</ParamField>
+
+<ParamField path="settings" type="object">
+  Queue settings object
+</ParamField>
+
+<ParamField path="settings.delivery_delay" type="number">
+  Number of seconds to delay delivery of all messages (0-43200)
+</ParamField>
+
+<ParamField path="settings.message_retention_period" type="number">
+  Number of seconds to retain unconsumed messages (60-1209600, default: 345600)
+</ParamField>
+
+<ParamField path="settings.delivery_paused" type="boolean">
+  Whether message delivery to consumers is paused
+</ParamField>
+
+### Delete a queue
+
+Delete a queue.
+
+```typescript
+await client.queues.delete(
+  '023e105f4ecef8ad9ca31a8372d0c353',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID to delete
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+## Messages
+
+Send and receive messages from queues.
+
+### Send a message
+
+Send a single message to a queue.
+
+```typescript
+const response = await client.queues.messages.push(
+  'my-queue',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    body: JSON.stringify({ hello: 'world' }),
+  }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID or name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="body" type="string" required>
+  The message body (up to 128 KB)
+</ParamField>
+
+<ParamField path="content_type" type="string">
+  Content type (default: 'text/plain')
+</ParamField>
+
+### Send multiple messages
+
+Send multiple messages in a single request.
+
+```typescript
+const response = await client.queues.messages.bulkPush(
+  'my-queue',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    messages: [
+      { body: JSON.stringify({ id: 1 }) },
+      { body: JSON.stringify({ id: 2 }) },
+      { body: JSON.stringify({ id: 3 }) },
+    ],
+  }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID or name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="messages" type="array" required>
+  Array of message objects (up to 100 messages)
+</ParamField>
+
+### Pull messages
+
+Pull messages from a queue (HTTP pull).
+
+```typescript
+const messages = await client.queues.messages.pull(
+  'my-queue',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    batch_size: 10,
+    visibility_timeout_ms: 30000,
+  }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID or name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="batch_size" type="number">
+  Number of messages to pull (1-100, default: 10)
+</ParamField>
+
+<ParamField path="visibility_timeout_ms" type="number">
+  Time in milliseconds to hide messages from other consumers (default: 30000)
+</ParamField>
+
+### Acknowledge messages
+
+Acknowledge messages after processing.
+
+```typescript
+await client.queues.messages.ack(
+  'my-queue',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    acks: [
+      { lease_id: 'lease-id-1' },
+      { lease_id: 'lease-id-2' },
+    ],
+  }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID or name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="acks" type="array" required>
+  Array of acknowledgment objects with lease IDs
+</ParamField>
+
+## Consumers
+
+Manage queue consumers (Workers that process messages).
+
+### Create a consumer
+
+Create a Worker consumer for a queue.
+
+```typescript
+const consumer = await client.queues.consumers.create(
+  'my-queue',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    script_name: 'my-consumer-worker',
+    settings: {
+      batch_size: 10,
+      max_retries: 3,
+      max_wait_time_ms: 5000,
+    },
+  }
+);
+```
+
+<ParamField path="queue_id" type="string" required>
+  The queue ID or name
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="script_name" type="string" required>
+  Name of the Worker script to process messages
+</ParamField>
+
+<ParamField path="settings" type="object">
+  Consumer settings
+</ParamField>
+
+<ParamField path="settings.batch_size" type="number">
+  Number of messages per batch (1-100, default: 10)
+</ParamField>
+
+<ParamField path="settings.max_retries" type="number">
+  Maximum retry attempts (0-100, default: 3)
+</ParamField>
+
+<ParamField path="settings.max_wait_time_ms" type="number">
+  Maximum time to wait for messages in milliseconds (default: 5000)
+</ParamField>
+
+### List consumers
+
+Retrieve all consumers for a queue.
+
+```typescript
+for await (const consumer of client.queues.consumers.list(
+  'my-queue',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+)) {
+  console.log(consumer);
+}
+```
+
+### Delete a consumer
+
+```typescript
+await client.queues.consumers.delete(
+  'my-queue',
+  consumerId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Purge
+
+Delete all messages from a queue.
+
+### Start purge
+
+```typescript
+await client.queues.purge.start(
+  'my-queue',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Check purge status
+
+```typescript
+const status = await client.queues.purge.status(
+  'my-queue',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```

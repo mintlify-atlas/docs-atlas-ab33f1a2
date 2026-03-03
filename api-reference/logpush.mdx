@@ -1,0 +1,301 @@
+---
+title: 'Logpush'
+description: 'API reference for Cloudflare Logpush (log export service)'
+---
+
+## Overview
+
+Cloudflare Logpush sends logs of HTTP requests, Spectrum events, firewall events, and more to cloud storage destinations. Use the Logpush API to manage jobs, validate destinations, and configure log fields.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Jobs
+
+Manage Logpush jobs.
+
+### Create a job
+
+Create a new Logpush job.
+
+```typescript
+const job = await client.logpush.jobs.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  destination_conf: 's3://bucket/path?region=us-west-2',
+  dataset: 'http_requests',
+  logpull_options: 'fields=ClientIP,EdgeStartTimestamp',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier (use `zone_id` for zone-scoped jobs)
+</ParamField>
+
+<ParamField path="destination_conf" type="string" required>
+  Destination configuration string (e.g., S3 bucket URL with credentials)
+</ParamField>
+
+<ParamField path="dataset" type="string" required>
+  Dataset to push (e.g., `http_requests`, `firewall_events`, `spectrum_events`)
+</ParamField>
+
+<ParamField path="logpull_options" type="string">
+  Configuration string specifying fields to include and other options
+</ParamField>
+
+<ParamField path="enabled" type="boolean">
+  Whether the job is enabled (default: true)
+</ParamField>
+
+<ParamField path="frequency" type="string">
+  How often logs are pushed (e.g., `high`, `low`)
+</ParamField>
+
+<ParamField path="name" type="string">
+  Job name
+</ParamField>
+
+<ResponseField name="id" type="number">
+  Job identifier
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether the job is active
+</ResponseField>
+
+<ResponseField name="destination_conf" type="string">
+  Destination configuration
+</ResponseField>
+
+### Update a job
+
+Update an existing Logpush job.
+
+```typescript
+const job = await client.logpush.jobs.update(
+  jobId,
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    enabled: false,
+  }
+);
+```
+
+### List jobs
+
+List all Logpush jobs.
+
+```typescript
+const jobs = await client.logpush.jobs.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+### Get a job
+
+Get details of a specific Logpush job.
+
+```typescript
+const job = await client.logpush.jobs.get(
+  jobId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete a job
+
+Delete a Logpush job.
+
+```typescript
+await client.logpush.jobs.delete(
+  jobId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Ownership
+
+Manage ownership validation for Logpush destinations.
+
+### Create ownership challenge
+
+Generate an ownership challenge for a destination.
+
+```typescript
+const challenge = await client.logpush.ownership.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  destination_conf: 's3://bucket/path?region=us-west-2',
+});
+```
+
+<ParamField path="destination_conf" type="string" required>
+  Destination configuration to validate
+</ParamField>
+
+<ResponseField name="filename" type="string">
+  Name of the file to upload for validation
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Contents to include in the validation file
+</ResponseField>
+
+<ResponseField name="valid" type="boolean">
+  Whether the ownership is already validated
+</ResponseField>
+
+### Validate ownership
+
+Validate ownership of a destination.
+
+```typescript
+const result = await client.logpush.ownership.validate({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  destination_conf: 's3://bucket/path?region=us-west-2',
+  ownership_challenge: 'challenge-token',
+});
+```
+
+<ParamField path="destination_conf" type="string" required>
+  Destination configuration
+</ParamField>
+
+<ParamField path="ownership_challenge" type="string" required>
+  Ownership challenge token
+</ParamField>
+
+## Validate
+
+Validate Logpush destinations and origin configurations.
+
+### Validate destination
+
+Check if a destination configuration is valid.
+
+```typescript
+const result = await client.logpush.validate.destination({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  destination_conf: 's3://bucket/path?region=us-west-2',
+  logpull_options: 'fields=ClientIP,EdgeStartTimestamp',
+});
+```
+
+### Check if destination exists
+
+Check if a destination exists and is accessible.
+
+```typescript
+const result = await client.logpush.validate.destinationExists({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  destination_conf: 's3://bucket/path?region=us-west-2',
+});
+```
+
+### Validate origin
+
+Validate origin configuration for Logpush.
+
+```typescript
+const result = await client.logpush.validate.origin(params);
+```
+
+## Datasets
+
+Get information about available datasets.
+
+```typescript
+const datasets = client.logpush.datasets;
+```
+
+The datasets resource provides methods to retrieve information about available log datasets and their fields.
+
+## Edge
+
+Manage instant Logpush jobs for edge locations.
+
+```typescript
+const edge = client.logpush.edge;
+```
+
+Instant Logpush jobs provide on-demand access to logs from specific edge locations.
+
+### Create instant job
+
+```typescript
+const job = await client.logpush.edge.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  // configuration
+});
+```
+
+### Get instant job
+
+```typescript
+const job = await client.logpush.edge.get(
+  jobId,
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Types
+
+### LogpushJob
+
+<ResponseField name="id" type="number">
+  Job identifier
+</ResponseField>
+
+<ResponseField name="enabled" type="boolean">
+  Whether the job is active
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Job name
+</ResponseField>
+
+<ResponseField name="dataset" type="string">
+  Dataset being pushed
+</ResponseField>
+
+<ResponseField name="destination_conf" type="string">
+  Destination configuration
+</ResponseField>
+
+<ResponseField name="logpull_options" type="string">
+  Log field and option configuration
+</ResponseField>
+
+<ResponseField name="frequency" type="string">
+  Push frequency
+</ResponseField>
+
+<ResponseField name="last_complete" type="string">
+  Timestamp of last successful push
+</ResponseField>
+
+<ResponseField name="last_error" type="string">
+  Timestamp of last error
+</ResponseField>
+
+### OutputOptions
+
+Output formatting options for logs.
+
+<ResponseField name="field_delimiter" type="string">
+  Delimiter between fields
+</ResponseField>
+
+<ResponseField name="record_delimiter" type="string">
+  Delimiter between records
+</ResponseField>
+
+<ResponseField name="timestamp_format" type="string">
+  Format for timestamps
+</ResponseField>

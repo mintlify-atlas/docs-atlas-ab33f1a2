@@ -1,0 +1,199 @@
+---
+title: Diagnostics
+description: Run network diagnostics from Cloudflare's edge
+---
+
+The Diagnostics API allows you to run network diagnostic tools like traceroutes from Cloudflare's global network to troubleshoot connectivity issues.
+
+## Traceroutes
+
+### Run traceroute
+
+Run traceroutes from Cloudflare colos to one or more targets.
+
+```typescript
+for await (const traceroute of client.diagnostics.traceroutes.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  targets: ['203.0.113.1', 'cloudflare.com'],
+  colos: ['SJC', 'LAX'],
+  options: {
+    packet_type: 'icmp',
+    packets_per_ttl: 3,
+    max_ttl: 30,
+    wait_time: 5
+  }
+})) {
+  console.log(traceroute.target);
+  traceroute.colos?.forEach(colo => {
+    console.log(colo.colo?.name, colo.traceroute_time_ms);
+  });
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField body="targets" type="string[]" required>
+  Array of target hostnames, IPv4, or IPv6 addresses to traceroute
+</ParamField>
+
+<ParamField body="colos" type="string[]">
+  Source colo names. If not specified, all colos will be used. China colos are unavailable for traceroutes
+</ParamField>
+
+<ParamField body="options" type="object">
+  Traceroute configuration options
+  <Expandable>
+    <ParamField body="packet_type" type="string">
+      Type of packet to send
+      
+      Options: `icmp` | `tcp` | `udp` | `gre` | `gre+icmp`
+    </ParamField>
+    <ParamField body="packets_per_ttl" type="number">
+      Number of packets sent at each TTL
+    </ParamField>
+    <ParamField body="max_ttl" type="number">
+      Maximum time-to-live (TTL) value
+    </ParamField>
+    <ParamField body="port" type="number">
+      For UDP and TCP, specifies the destination port. For ICMP, specifies the initial ICMP sequence value. Default value 0 will choose the best value for each protocol
+    </ParamField>
+    <ParamField body="wait_time" type="number">
+      Time (in seconds) to wait for a response to a probe
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response fields
+
+<ResponseField name="target" type="string">
+  The target hostname, IPv4, or IPv6 address
+</ResponseField>
+
+<ResponseField name="colos" type="object[]">
+  Traceroute results from each colo
+  <Expandable>
+    <ResponseField name="colo" type="object">
+      Source colo information
+      <Expandable>
+        <ResponseField name="name" type="string">
+          Source colo name (e.g., "SJC")
+        </ResponseField>
+        <ResponseField name="city" type="string">
+          Source colo city
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="error" type="string">
+      Errors resulting from collecting traceroute data
+      
+      Possible values:
+      - "" (empty string for no error)
+      - "Could not gather traceroute data: Code 1"
+      - "Could not gather traceroute data: Code 2"
+      - "Could not gather traceroute data: Code 3"
+      - "Could not gather traceroute data: Code 4"
+    </ResponseField>
+    <ResponseField name="traceroute_time_ms" type="number">
+      Total time of traceroute in milliseconds
+    </ResponseField>
+    <ResponseField name="target_summary" type="unknown">
+      Aggregated statistics from all hops about the target
+    </ResponseField>
+    <ResponseField name="hops" type="object[]">
+      Array of hops in the traceroute
+      <Expandable>
+        <ResponseField name="packets_ttl" type="number">
+          The time to live (TTL) for this hop
+        </ResponseField>
+        <ResponseField name="packets_sent" type="number">
+          Number of packets sent with specified TTL
+        </ResponseField>
+        <ResponseField name="packets_lost" type="number">
+          Number of packets where no response was received
+        </ResponseField>
+        <ResponseField name="nodes" type="object[]">
+          Array of node objects representing routers at this hop
+          <Expandable>
+            <ResponseField name="ip" type="string">
+              IP address of the node
+            </ResponseField>
+            <ResponseField name="name" type="string">
+              Hostname of the address (may be the same as IP)
+            </ResponseField>
+            <ResponseField name="asn" type="string">
+              AS number associated with the node
+            </ResponseField>
+            <ResponseField name="packet_count" type="number">
+              Number of packets with a response from this node
+            </ResponseField>
+            <ResponseField name="min_rtt_ms" type="number">
+              Minimum round-trip time in milliseconds
+            </ResponseField>
+            <ResponseField name="mean_rtt_ms" type="number">
+              Mean round-trip time in milliseconds
+            </ResponseField>
+            <ResponseField name="max_rtt_ms" type="number">
+              Maximum round-trip time in milliseconds
+            </ResponseField>
+            <ResponseField name="std_dev_rtt_ms" type="number">
+              Standard deviation of the RTTs in milliseconds
+            </ResponseField>
+            <ResponseField name="labels" type="string[]">
+              Additional annotations (e.g., which traceroute type for GRE+ICMP)
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example response
+
+```json
+[
+  {
+    "target": "cloudflare.com",
+    "colos": [
+      {
+        "colo": {
+          "name": "SJC",
+          "city": "San Jose"
+        },
+        "traceroute_time_ms": 45.2,
+        "hops": [
+          {
+            "packets_ttl": 1,
+            "packets_sent": 3,
+            "packets_lost": 0,
+            "nodes": [
+              {
+                "ip": "192.0.2.1",
+                "name": "router1.example.com",
+                "asn": "13335",
+                "packet_count": 3,
+                "min_rtt_ms": 1.2,
+                "mean_rtt_ms": 1.5,
+                "max_rtt_ms": 2.1,
+                "std_dev_rtt_ms": 0.4
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+## Endpoint health checks
+
+The Diagnostics API also provides endpoint health check functionality through the `endpointHealthchecks` sub-resource for monitoring specific endpoints.
+
+```typescript
+const healthchecks = await client.diagnostics.endpointHealthchecks.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353'
+});
+```

@@ -1,0 +1,255 @@
+---
+title: 'Magic Cloud Networking'
+description: 'API reference for Cloudflare Magic Cloud Networking'
+---
+
+## Overview
+
+Magic Cloud Networking provides secure, high-performance connectivity between your cloud environments and Cloudflare's network. Manage cloud integrations, on-ramps, resources, and catalog synchronization.
+
+## Initialize the client
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your-api-token',
+});
+```
+
+## Resources
+
+### Cloud integrations
+
+Manage integrations with cloud providers (AWS, Azure, GCP).
+
+```typescript
+const cloudIntegrations = client.magicCloudNetworking.cloudIntegrations;
+```
+
+Available methods:
+
+#### Create integration
+
+Create a new cloud provider integration.
+
+```typescript
+const integration = await client.magicCloudNetworking.cloudIntegrations.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  // integration configuration
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+#### List integrations
+
+List all cloud integrations.
+
+```typescript
+const integrations = await client.magicCloudNetworking.cloudIntegrations.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+});
+```
+
+#### Get integration
+
+Retrieve a specific cloud integration.
+
+```typescript
+const integration = await client.magicCloudNetworking.cloudIntegrations.get(
+  integrationId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+#### Update integration
+
+Update an existing cloud integration.
+
+```typescript
+const integration = await client.magicCloudNetworking.cloudIntegrations.update(
+  integrationId,
+  params
+);
+```
+
+#### Delete integration
+
+Delete a cloud integration.
+
+```typescript
+await client.magicCloudNetworking.cloudIntegrations.delete(
+  integrationId,
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+#### Discover resources
+
+Discover cloud resources available for integration.
+
+```typescript
+const resources = await client.magicCloudNetworking.cloudIntegrations.discover(
+  integrationId,
+  params
+);
+```
+
+#### Discover all resources
+
+Discover all available cloud resources across integrations.
+
+```typescript
+const allResources = await client.magicCloudNetworking.cloudIntegrations.discoverAll(params);
+```
+
+#### Initial setup
+
+Perform initial setup for a cloud integration.
+
+```typescript
+const setup = await client.magicCloudNetworking.cloudIntegrations.initialSetup(params);
+```
+
+### On-ramps
+
+Manage network on-ramps for cloud connectivity.
+
+```typescript
+const onRamps = client.magicCloudNetworking.onRamps;
+```
+
+Available methods:
+
+#### Create on-ramp
+
+```typescript
+const onRamp = await client.magicCloudNetworking.onRamps.create(params);
+```
+
+#### Update on-ramp
+
+```typescript
+const onRamp = await client.magicCloudNetworking.onRamps.update(onRampId, params);
+```
+
+#### List on-ramps
+
+```typescript
+const onRamps = await client.magicCloudNetworking.onRamps.list(params);
+```
+
+#### Delete on-ramp
+
+```typescript
+await client.magicCloudNetworking.onRamps.delete(onRampId, params);
+```
+
+#### Plan configuration
+
+Plan configuration changes for an on-ramp.
+
+```typescript
+const plan = await client.magicCloudNetworking.onRamps.plan(onRampId, params);
+```
+
+#### Apply configuration
+
+Apply planned configuration changes.
+
+```typescript
+const result = await client.magicCloudNetworking.onRamps.apply(onRampId, params);
+```
+
+#### Export configuration
+
+Export on-ramp configuration.
+
+```typescript
+await client.magicCloudNetworking.onRamps.export(onRampId, params);
+```
+
+### Resources
+
+Manage cloud resources integrated with Magic Cloud Networking.
+
+```typescript
+const resources = client.magicCloudNetworking.resources;
+```
+
+Available methods:
+
+#### List resources
+
+```typescript
+const resourceList = await client.magicCloudNetworking.resources.list(params);
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+#### Get resource
+
+```typescript
+const resource = await client.magicCloudNetworking.resources.get(resourceId, params);
+```
+
+#### Export resources
+
+```typescript
+await client.magicCloudNetworking.resources.export(params);
+```
+
+#### Policy preview
+
+Preview policy changes for resources.
+
+```typescript
+const preview = await client.magicCloudNetworking.resources.policyPreview(params);
+```
+
+### Catalog syncs
+
+Manage catalog synchronization for cloud resources.
+
+```typescript
+const catalogSyncs = client.magicCloudNetworking.catalogSyncs;
+```
+
+Available methods:
+
+#### Create sync
+
+```typescript
+const sync = await client.magicCloudNetworking.catalogSyncs.create(params);
+```
+
+#### Update sync
+
+```typescript
+const sync = await client.magicCloudNetworking.catalogSyncs.update(syncId, params);
+```
+
+#### List syncs
+
+```typescript
+const syncs = await client.magicCloudNetworking.catalogSyncs.list(params);
+```
+
+#### Delete sync
+
+```typescript
+await client.magicCloudNetworking.catalogSyncs.delete(syncId, params);
+```
+
+#### Refresh catalog
+
+Manually trigger a catalog refresh.
+
+```typescript
+const result = await client.magicCloudNetworking.catalogSyncs.refresh(syncId, params);
+```

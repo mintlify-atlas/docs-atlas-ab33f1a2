@@ -1,0 +1,227 @@
+---
+title: Turnstile
+description: CAPTCHA alternative for bot detection and human verification
+---
+
+The Turnstile API allows you to manage challenge widgets that provide bot protection without the frustration of traditional CAPTCHAs. Turnstile uses machine learning to validate users with minimal friction.
+
+## Initialize the Turnstile resource
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+const turnstile = client.turnstile;
+```
+
+## Widget management
+
+Manage Turnstile widgets for your applications.
+
+### Create widget
+
+Create a new Turnstile widget for bot protection.
+
+```typescript
+const widget = await client.turnstile.widgets.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  domains: [
+    'cloudflare.com',
+    'blog.example.com',
+    '203.0.113.1',
+  ],
+  mode: 'invisible',
+  name: 'blog.cloudflare.com login form',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField body="domains" type="string[]" required>
+  List of domains where the widget will work. Accepts hostnames or IPv4/IPv6 addresses. The widget will work on these domains and their subdomains.
+</ParamField>
+
+<ParamField body="mode" type="string" required>
+  Widget mode. Options:
+  - `non-interactive` - No user interaction required
+  - `invisible` - Invisible challenge, minimal user interaction
+  - `managed` - Adaptive challenge based on risk
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Human readable widget name. This should be a meaningful string to identify your widget and where it is used.
+</ParamField>
+
+<ParamField body="bot_fight_mode" type="boolean">
+  When set to true, Cloudflare issues computationally expensive challenges in response to malicious bots (Enterprise only).
+</ParamField>
+
+<ParamField body="clearance_level" type="string">
+  If Turnstile is embedded on a Cloudflare site, this determines the challenge clearance level. Options: `no_clearance`, `jschallenge`, `managed`, `interactive`
+</ParamField>
+
+<ParamField body="ephemeral_id" type="boolean">
+  Return the Ephemeral ID in /siteverify (Enterprise only).
+</ParamField>
+
+<ParamField body="offlabel" type="boolean">
+  Do not show any Cloudflare branding on the widget (Enterprise only).
+</ParamField>
+
+<ParamField body="region" type="string">
+  Region where this widget can be used. Options: `world`, `china`. This cannot be changed after creation.
+</ParamField>
+
+### Update widget
+
+Update the configuration of an existing widget.
+
+```typescript
+const widget = await client.turnstile.widgets.update(
+  '0x4AAF00AAAABn0R22HWm-YUc',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    domains: ['cloudflare.com', 'blog.example.com'],
+    mode: 'managed',
+    name: 'Updated widget name',
+  }
+);
+```
+
+### List widgets
+
+List all Turnstile widgets in your account.
+
+```typescript
+// Automatically fetches more pages as needed
+for await (const widget of client.turnstile.widgets.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(widget.name, widget.sitekey);
+}
+```
+
+<ParamField query="direction" type="string">
+  Direction to order widgets. Options: `asc`, `desc`
+</ParamField>
+
+<ParamField query="order" type="string">
+  Field to order widgets by. Options: `id`, `sitekey`, `name`, `created_on`, `modified_on`
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number of paginated results
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of items per page
+</ParamField>
+
+### Get widget
+
+Retrieve a single widget configuration by sitekey.
+
+```typescript
+const widget = await client.turnstile.widgets.get(
+  '0x4AAF00AAAABn0R22HWm-YUc',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Delete widget
+
+Delete a Turnstile widget.
+
+```typescript
+const widget = await client.turnstile.widgets.delete(
+  '0x4AAF00AAAABn0R22HWm-YUc',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Rotate secret
+
+Generate a new secret key for a widget.
+
+```typescript
+const widget = await client.turnstile.widgets.rotateSecret(
+  '0x4AAF00AAAABn0R22HWm-YUc',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    invalidate_immediately: false,
+  }
+);
+```
+
+<ParamField body="invalidate_immediately" type="boolean">
+  If set to false, the previous secret will remain valid for two hours. Otherwise, the secret is immediately invalidated and requests using it will be rejected.
+</ParamField>
+
+<Tip>
+By default, the previous secret remains valid for 2 hours during rotation, allowing for a graceful transition. Note that secrets cannot be rotated again during this grace period.
+</Tip>
+
+## Response types
+
+### Widget
+
+A Turnstile widget configuration.
+
+<ResponseField name="sitekey" type="string" required>
+  Widget item identifier tag
+</ResponseField>
+
+<ResponseField name="secret" type="string" required>
+  Secret key for this widget (only returned on creation and rotation)
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Human readable widget name
+</ResponseField>
+
+<ResponseField name="domains" type="string[]" required>
+  List of domains where the widget will work
+</ResponseField>
+
+<ResponseField name="mode" type="string" required>
+  Widget mode: `non-interactive`, `invisible`, or `managed`
+</ResponseField>
+
+<ResponseField name="bot_fight_mode" type="boolean" required>
+  Whether bot fight mode is enabled
+</ResponseField>
+
+<ResponseField name="clearance_level" type="string" required>
+  Challenge clearance level
+</ResponseField>
+
+<ResponseField name="ephemeral_id" type="boolean" required>
+  Whether ephemeral ID is enabled
+</ResponseField>
+
+<ResponseField name="offlabel" type="boolean" required>
+  Whether Cloudflare branding is hidden
+</ResponseField>
+
+<ResponseField name="region" type="string" required>
+  Region where widget can be used: `world` or `china`
+</ResponseField>
+
+<ResponseField name="created_on" type="string" required>
+  When the widget was created
+</ResponseField>
+
+<ResponseField name="modified_on" type="string" required>
+  When the widget was last modified
+</ResponseField>
+
+## Related resources
+
+- [Bot Management](/api-reference/bot-management)
+- [Turnstile Documentation](https://developers.cloudflare.com/turnstile/)
+- [Security Center](/api-reference/security-center)

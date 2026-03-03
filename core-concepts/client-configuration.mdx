@@ -1,0 +1,222 @@
+---
+title: Client configuration
+description: Learn how to initialize and configure the Cloudflare SDK client
+---
+
+The Cloudflare SDK provides flexible configuration options for customizing client behavior, authentication, network settings, and more.
+
+## Basic initialization
+
+Create a new Cloudflare client with your API token:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env['CLOUDFLARE_API_TOKEN'], // This is the default and can be omitted
+});
+```
+
+<Note>
+The SDK automatically reads the `CLOUDFLARE_API_TOKEN` environment variable if no `apiToken` is provided.
+</Note>
+
+## Authentication methods
+
+The SDK supports multiple authentication methods:
+
+<Tabs>
+  <Tab title="API Token (Recommended)">
+    ```typescript
+    const client = new Cloudflare({
+      apiToken: 'your-api-token',
+    });
+    ```
+    
+    API tokens provide granular permissions and are the recommended authentication method. [Create a token](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/).
+  </Tab>
+  
+  <Tab title="Global API Key">
+    ```typescript
+    const client = new Cloudflare({
+      apiEmail: 'your-email@example.com',
+      apiKey: 'your-global-api-key',
+    });
+    ```
+    
+    <Warning>
+    Global API keys grant full account access. Use API tokens instead when possible.
+    </Warning>
+  </Tab>
+  
+  <Tab title="User Service Key">
+    ```typescript
+    const client = new Cloudflare({
+      userServiceKey: 'your-service-key',
+    });
+    ```
+    
+    Used for interacting with Origin CA certificates. [View/change your key](https://developers.cloudflare.com/fundamentals/api/get-started/ca-keys/#viewchange-your-origin-ca-keys).
+  </Tab>
+</Tabs>
+
+## Configuration options
+
+The `ClientOptions` interface provides comprehensive configuration:
+
+<ParamField path="apiToken" type="string">
+  API token for authentication (reads from `CLOUDFLARE_API_TOKEN` by default)
+</ParamField>
+
+<ParamField path="apiKey" type="string">
+  Global API key for legacy authentication
+</ParamField>
+
+<ParamField path="apiEmail" type="string">
+  Email address used with Global API key
+</ParamField>
+
+<ParamField path="userServiceKey" type="string">
+  Service key for Origin CA certificates API
+</ParamField>
+
+<ParamField path="baseURL" type="string" default="https://api.cloudflare.com/client/v4">
+  Override the default base URL for the API
+</ParamField>
+
+<ParamField path="apiVersion" type="string">
+  Define the API version to target for requests (e.g., "2025-01-01")
+</ParamField>
+
+<ParamField path="timeout" type="number" default="60000">
+  Maximum time in milliseconds to wait for a response (default: 1 minute)
+</ParamField>
+
+<ParamField path="maxRetries" type="number" default="2">
+  Maximum number of retry attempts for failed requests
+</ParamField>
+
+<ParamField path="httpAgent" type="Agent">
+  Custom HTTP(S) agent for managing connections
+</ParamField>
+
+<ParamField path="fetch" type="Fetch">
+  Custom `fetch` function implementation
+</ParamField>
+
+<ParamField path="defaultHeaders" type="Headers">
+  Default headers included with every request
+</ParamField>
+
+<ParamField path="defaultQuery" type="DefaultQuery">
+  Default query parameters included with every request
+</ParamField>
+
+## Custom base URL
+
+Override the API endpoint for testing or alternative environments:
+
+```typescript
+const client = new Cloudflare({
+  baseURL: 'https://api.example.com/v2/',
+  apiToken: process.env['CLOUDFLARE_API_TOKEN'],
+});
+```
+
+You can also use the `CLOUDFLARE_BASE_URL` environment variable:
+
+```bash
+export CLOUDFLARE_BASE_URL=https://api.example.com/v2/
+```
+
+## HTTP agent configuration
+
+Configure a custom HTTP agent for proxy support or connection pooling:
+
+```typescript
+import http from 'http';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import Cloudflare from 'cloudflare';
+
+// Configure the default for all requests
+const client = new Cloudflare({
+  httpAgent: new HttpsProxyAgent(process.env.PROXY_URL),
+});
+
+// Override per-request
+await client.zones.delete(
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' },
+  {
+    httpAgent: new http.Agent({ keepAlive: false }),
+  },
+);
+```
+
+<Note>
+By default, the SDK uses a stable agent to reuse TCP connections, eliminating handshakes and improving performance.
+</Note>
+
+## Custom fetch implementation
+
+Provide a custom `fetch` function for logging, middleware, or alternative implementations:
+
+```typescript
+import { fetch } from 'undici';
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  fetch: async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    console.log('About to make a request', url, init);
+    const response = await fetch(url, init);
+    console.log('Got response', response);
+    return response;
+  },
+});
+```
+
+### Fetch shims
+
+The SDK uses `node-fetch` in Node.js by default. To use the global web-standards `fetch`:
+
+```typescript
+// Use global web fetch (e.g., in NextJS or with --experimental-fetch)
+import 'cloudflare/shims/web';
+import Cloudflare from 'cloudflare';
+```
+
+To explicitly use Node.js polyfills:
+
+```typescript
+import 'cloudflare/shims/node';
+import Cloudflare from 'cloudflare';
+```
+
+## Default headers and query parameters
+
+Add custom headers or query parameters to all requests:
+
+```typescript
+const client = new Cloudflare({
+  apiToken: process.env['CLOUDFLARE_API_TOKEN'],
+  defaultHeaders: {
+    'X-Custom-Header': 'custom-value',
+  },
+  defaultQuery: {
+    debug: 'true',
+  },
+});
+```
+
+You can remove default headers in individual requests by setting them to `undefined` or `null`.
+
+## Debug logging
+
+Enable automatic request/response logging:
+
+```bash
+DEBUG=true node your-script.js
+```
+
+<Warning>
+Debug logging is intended for development only and may change without notice.
+</Warning>

@@ -1,0 +1,365 @@
+---
+title: Pagination
+description: Efficiently iterate through paginated API responses
+---
+
+List methods in the Cloudflare API return paginated results. The SDK provides convenient auto-pagination and manual pagination methods.
+
+## Auto-pagination with async iterators
+
+Use `for await...of` syntax to automatically fetch all pages:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare();
+
+async function fetchAllAccounts() {
+  const allAccounts = [];
+  
+  // Automatically fetches more pages as needed
+  for await (const account of client.accounts.list()) {
+    allAccounts.push(account);
+  }
+  
+  return allAccounts;
+}
+```
+
+<Note>
+The SDK handles pagination transparently, fetching additional pages as you iterate.
+</Note>
+
+## Manual pagination
+
+For more control, fetch pages manually:
+
+```typescript
+let page = await client.accounts.list();
+
+// Process first page
+for (const account of page.result) {
+  console.log(account);
+}
+
+// Fetch subsequent pages
+while (page.hasNextPage()) {
+  page = await page.getNextPage();
+  
+  for (const account of page.result) {
+    console.log(account);
+  }
+}
+```
+
+## Pagination types
+
+The SDK supports multiple pagination styles used across Cloudflare's API:
+
+<Tabs>
+  <Tab title="V4PagePagination">
+    Page-based pagination with items wrapped in a result object:
+    
+    ```typescript
+    interface V4PagePaginationResponse<Item> {
+      result: {
+        items?: Array<Item>;
+      };
+      result_info: {
+        page?: number;
+        per_page?: number;
+      };
+    }
+    ```
+    
+    **Query parameters:**
+    ```typescript
+    interface V4PagePaginationParams {
+      page?: number;
+      per_page?: number;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="V4PagePaginationArray">
+    Page-based pagination with items in a flat array:
+    
+    ```typescript
+    interface V4PagePaginationArrayResponse<Item> {
+      result: Array<Item>;
+      result_info: {
+        page?: number;
+        per_page?: number;
+      };
+    }
+    ```
+    
+    **Query parameters:**
+    ```typescript
+    interface V4PagePaginationArrayParams {
+      page?: number;
+      per_page?: number;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="CursorPagination">
+    Cursor-based pagination for stable results:
+    
+    ```typescript
+    interface CursorPaginationResponse<Item> {
+      result: Array<Item>;
+      result_info: {
+        count?: number;
+        cursor?: string;
+        per_page?: number;
+      };
+    }
+    ```
+    
+    **Query parameters:**
+    ```typescript
+    interface CursorPaginationParams {
+      per_page?: number;
+      cursor?: string;
+    }
+    ```
+  </Tab>
+  
+  <Tab title="CursorLimitPagination">
+    Cursor-based pagination using `limit` instead of `per_page`:
+    
+    ```typescript
+    interface CursorLimitPaginationParams {
+      limit?: number;
+      cursor?: string;
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Working with paginated results
+
+### Check for more pages
+
+```typescript
+const page = await client.accounts.list();
+
+if (page.hasNextPage()) {
+  console.log('More results available');
+}
+```
+
+### Access result metadata
+
+```typescript
+const page = await client.accounts.list();
+
+// Page information
+console.log('Current page:', page.result_info.page);
+console.log('Items per page:', page.result_info.per_page);
+console.log('Item count:', page.result_info.count);
+
+// Cursor (for cursor-based pagination)
+console.log('Next cursor:', page.result_info.cursor);
+```
+
+### Iterate through pages
+
+```typescript
+for await (const page of client.accounts.list().iterPages()) {
+  console.log(`Processing page with ${page.result.length} items`);
+  
+  for (const account of page.result) {
+    console.log(account.name);
+  }
+}
+```
+
+## Pagination parameters
+
+Control pagination behavior with query parameters:
+
+```typescript
+// Page-based pagination
+const page = await client.accounts.list({
+  page: 2,
+  per_page: 50,
+});
+
+// Cursor-based pagination
+const cursorPage = await client.zones.list({
+  cursor: 'previous-cursor-value',
+  per_page: 100,
+});
+```
+
+<ParamField path="page" type="number">
+  Page number to fetch (1-indexed, page-based pagination only)
+</ParamField>
+
+<ParamField path="per_page" type="number">
+  Number of items per page
+</ParamField>
+
+<ParamField path="limit" type="number">
+  Number of items to return (cursor-limit pagination only)
+</ParamField>
+
+<ParamField path="cursor" type="string">
+  Cursor token for fetching the next page (cursor-based pagination only)
+</ParamField>
+
+## Advanced patterns
+
+### Process items in batches
+
+```typescript
+const BATCH_SIZE = 100;
+const batches = [];
+let batch = [];
+
+for await (const account of client.accounts.list({ per_page: 50 })) {
+  batch.push(account);
+  
+  if (batch.length >= BATCH_SIZE) {
+    batches.push(batch);
+    batch = [];
+  }
+}
+
+if (batch.length > 0) {
+  batches.push(batch);
+}
+
+console.log(`Processed ${batches.length} batches`);
+```
+
+### Limit total results
+
+```typescript
+const MAX_ITEMS = 500;
+const accounts = [];
+
+for await (const account of client.accounts.list()) {
+  accounts.push(account);
+  
+  if (accounts.length >= MAX_ITEMS) {
+    break;
+  }
+}
+```
+
+### Filter while paginating
+
+```typescript
+const activeZones = [];
+
+for await (const zone of client.zones.list()) {
+  if (zone.status === 'active') {
+    activeZones.push(zone);
+  }
+}
+
+console.log(`Found ${activeZones.length} active zones`);
+```
+
+### Parallel processing
+
+```typescript
+const pages = [];
+
+// Collect all pages
+for await (const page of client.accounts.list().iterPages()) {
+  pages.push(page.result);
+}
+
+// Process pages in parallel
+await Promise.all(
+  pages.map(async (pageResults) => {
+    // Process each page
+    for (const account of pageResults) {
+      await processAccount(account);
+    }
+  })
+);
+```
+
+## Single page responses
+
+Some endpoints return non-paginated results using `SinglePage`:
+
+```typescript
+interface SinglePageResponse<Item> {
+  result: Array<Item>;
+}
+```
+
+These responses work with the same iterator pattern but never have additional pages:
+
+```typescript
+for await (const item of client.someEndpoint.list()) {
+  console.log(item);
+}
+// Only iterates once, no additional pages
+```
+
+## Performance considerations
+
+<Steps>
+  <Step title="Choose appropriate page sizes">
+    Balance between request count and memory usage:
+    
+    ```typescript
+    // Fewer requests, more memory
+    client.zones.list({ per_page: 1000 });
+    
+    // More requests, less memory
+    client.zones.list({ per_page: 50 });
+    ```
+  </Step>
+  
+  <Step title="Use cursor pagination for large datasets">
+    Cursor-based pagination provides stable results even as data changes:
+    
+    ```typescript
+    for await (const log of client.logpush.jobs.list()) {
+      // Cursor pagination handles concurrent modifications
+    }
+    ```
+  </Step>
+  
+  <Step title="Process items as they arrive">
+    Avoid loading all results into memory:
+    
+    ```typescript
+    // Good: Stream processing
+    for await (const zone of client.zones.list()) {
+      await processZone(zone);
+    }
+    
+    // Bad: Load everything first
+    const allZones = [];
+    for await (const zone of client.zones.list()) {
+      allZones.push(zone);
+    }
+    await processZones(allZones);
+    ```
+  </Step>
+  
+  <Step title="Implement pagination limits">
+    Protect against runaway pagination:
+    
+    ```typescript
+    const MAX_PAGES = 100;
+    let pageCount = 0;
+    
+    for await (const page of client.zones.list().iterPages()) {
+      if (++pageCount > MAX_PAGES) {
+        throw new Error('Pagination limit exceeded');
+      }
+      // Process page
+    }
+    ```
+  </Step>
+</Steps>

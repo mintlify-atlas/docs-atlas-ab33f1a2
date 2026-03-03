@@ -1,0 +1,412 @@
+---
+title: Firewall
+description: Manage firewall rules, access rules, and WAF settings
+---
+
+The Firewall resource provides methods to manage firewall rules, access rules, lockdowns, user agent rules, and Web Application Firewall (WAF) settings.
+
+## Firewall rules
+
+### create
+
+Create one or more firewall rules.
+
+```typescript
+const rules = await client.firewall.rules.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  rules: [
+    {
+      filter: {
+        expression: '(http.request.uri.path contains "/api/")'
+      },
+      action: 'block',
+      description: 'Block API requests'
+    }
+  ]
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="rules" type="array" required>
+  Array of firewall rules to create
+  
+  <ParamField path="rules[].filter" type="object" required>
+    Filter expression
+    
+    <ParamField path="rules[].filter.expression" type="string" required>
+      Firewall filter expression (e.g., '(http.request.uri.path contains "/api/")')
+    </ParamField>
+  </ParamField>
+  
+  <ParamField path="rules[].action" type="'block' | 'challenge' | 'js_challenge' | 'managed_challenge' | 'allow' | 'log' | 'bypass'" required>
+    Action to perform when the rule matches
+  </ParamField>
+  
+  <ParamField path="rules[].description" type="string">
+    Description of the rule
+  </ParamField>
+  
+  <ParamField path="rules[].priority" type="number">
+    Rule priority (lower numbers execute first)
+  </ParamField>
+  
+  <ParamField path="rules[].paused" type="boolean">
+    Whether the rule is paused
+  </ParamField>
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Firewall rule identifier
+</ResponseField>
+
+<ResponseField name="filter" type="object">
+  Filter configuration
+</ResponseField>
+
+<ResponseField name="action" type="string">
+  Action to perform
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Rule description
+</ResponseField>
+
+<ResponseField name="priority" type="number">
+  Rule priority
+</ResponseField>
+
+<ResponseField name="paused" type="boolean">
+  Whether the rule is paused
+</ResponseField>
+
+### update
+
+Update a firewall rule.
+
+```typescript
+const rule = await client.firewall.rules.update(
+  'rule_123',
+  {
+    zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    action: 'managed_challenge',
+    description: 'Updated rule'
+  }
+);
+```
+
+<ParamField path="rule_id" type="string" required>
+  Firewall rule identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### list
+
+List all firewall rules for a zone.
+
+```typescript
+for await (const rule of client.firewall.rules.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+})) {
+  console.log(`${rule.description}: ${rule.action}`);
+}
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### delete
+
+Delete a firewall rule.
+
+```typescript
+const result = await client.firewall.rules.delete(
+  'rule_123',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="rule_id" type="string" required>
+  Firewall rule identifier (first parameter)
+</ParamField>
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+### get
+
+Get details for a specific firewall rule.
+
+```typescript
+const rule = await client.firewall.rules.get(
+  'rule_123',
+  { zone_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+## Access rules
+
+Access rules allow you to block, challenge, or allow traffic based on IP address, IP range, country, or ASN.
+
+### create
+
+Create an access rule.
+
+```typescript
+// Block an IP address
+const rule = await client.firewall.accessRules.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  mode: 'block',
+  configuration: {
+    target: 'ip',
+    value: '192.0.2.1'
+  },
+  notes: 'Block malicious IP'
+});
+
+// Block a country
+const countryRule = await client.firewall.accessRules.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  mode: 'challenge',
+  configuration: {
+    target: 'country',
+    value: 'CN'
+  }
+});
+```
+
+<ParamField path="account_id" type="string">
+  Account identifier (use either account_id or zone_id)
+</ParamField>
+
+<ParamField path="zone_id" type="string">
+  Zone identifier (use either account_id or zone_id)
+</ParamField>
+
+<ParamField path="mode" type="'block' | 'challenge' | 'whitelist' | 'js_challenge' | 'managed_challenge'" required>
+  Action to apply to matching traffic
+</ParamField>
+
+<ParamField path="configuration" type="object" required>
+  Rule configuration
+  
+  <ParamField path="configuration.target" type="'ip' | 'ip_range' | 'country' | 'asn' | 'ip6'" required>
+    Target type
+  </ParamField>
+  
+  <ParamField path="configuration.value" type="string" required>
+    Target value (IP address, country code, ASN number, etc.)
+  </ParamField>
+</ParamField>
+
+<ParamField path="notes" type="string">
+  Description or notes about the rule
+</ParamField>
+
+### list
+
+List access rules.
+
+```typescript
+for await (const rule of client.firewall.accessRules.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  mode: 'block'
+})) {
+  console.log(rule);
+}
+```
+
+<ParamField path="mode" type="string">
+  Filter by mode
+</ParamField>
+
+<ParamField path="configuration.target" type="string">
+  Filter by target type
+</ParamField>
+
+## Lockdowns
+
+Lockdowns restrict access to URLs to specific IP addresses or ranges.
+
+### create
+
+Create a zone lockdown rule.
+
+```typescript
+const lockdown = await client.firewall.lockdowns.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  urls: ['example.com/admin/*'],
+  configurations: [
+    {
+      target: 'ip',
+      value: '192.0.2.1'
+    }
+  ],
+  description: 'Restrict admin panel to office IP'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="urls" type="string[]" required>
+  URLs to apply the lockdown to (supports wildcards)
+</ParamField>
+
+<ParamField path="configurations" type="array" required>
+  IP addresses or ranges to allow
+  
+  <ParamField path="configurations[].target" type="'ip' | 'ip_range'" required>
+    Configuration type
+  </ParamField>
+  
+  <ParamField path="configurations[].value" type="string" required>
+    IP address or CIDR range
+  </ParamField>
+</ParamField>
+
+<ParamField path="description" type="string">
+  Description of the lockdown
+</ParamField>
+
+<ParamField path="paused" type="boolean">
+  Whether the lockdown is paused
+</ParamField>
+
+### list
+
+List zone lockdown rules.
+
+```typescript
+for await (const lockdown of client.firewall.lockdowns.list({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353'
+})) {
+  console.log(`${lockdown.description}: ${lockdown.urls.join(', ')}`);
+}
+```
+
+## User agent rules
+
+User agent rules allow you to block or challenge requests based on the User-Agent header.
+
+### create
+
+Create a user agent blocking rule.
+
+```typescript
+const uaRule = await client.firewall.uaRules.create({
+  zone_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  mode: 'block',
+  configuration: {
+    target: 'ua',
+    value: 'BadBot/1.0'
+  },
+  description: 'Block BadBot'
+});
+```
+
+<ParamField path="zone_id" type="string" required>
+  Zone identifier
+</ParamField>
+
+<ParamField path="mode" type="'block' | 'challenge' | 'js_challenge' | 'managed_challenge'" required>
+  Action to apply
+</ParamField>
+
+<ParamField path="configuration" type="object" required>
+  Configuration
+  
+  <ParamField path="configuration.target" type="'ua'" required>
+    Must be 'ua'
+  </ParamField>
+  
+  <ParamField path="configuration.value" type="string" required>
+    User agent string to match
+  </ParamField>
+</ParamField>
+
+## Firewall actions
+
+Available actions for firewall rules:
+
+- **block** - Block the request
+- **challenge** - Present a CAPTCHA challenge
+- **js_challenge** - Present a JavaScript challenge
+- **managed_challenge** - Present a Cloudflare-managed challenge
+- **allow** - Allow the request
+- **log** - Log the request but take no action
+- **bypass** - Bypass subsequent firewall rules
+
+## Example usage
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN
+});
+
+const zoneId = '023e105f4ecef8ad9ca31a8372d0c353';
+
+// Create a firewall rule to block specific paths
+const firewallRule = await client.firewall.rules.create({
+  zone_id: zoneId,
+  rules: [
+    {
+      filter: {
+        expression: '(http.request.uri.path contains "/wp-admin/" and ip.geoip.country ne "US")'
+      },
+      action: 'block',
+      description: 'Block non-US access to WordPress admin'
+    }
+  ]
+});
+
+// Create an access rule to block an IP
+const accessRule = await client.firewall.accessRules.create({
+  zone_id: zoneId,
+  mode: 'block',
+  configuration: {
+    target: 'ip',
+    value: '192.0.2.100'
+  },
+  notes: 'Blocked for abuse'
+});
+
+// Create a lockdown for admin area
+const lockdown = await client.firewall.lockdowns.create({
+  zone_id: zoneId,
+  urls: ['example.com/admin/*', 'example.com/dashboard/*'],
+  configurations: [
+    { target: 'ip', value: '192.0.2.1' },
+    { target: 'ip_range', value: '198.51.100.0/24' }
+  ],
+  description: 'Office IP lockdown for admin'
+});
+
+// Block a bad bot
+const uaRule = await client.firewall.uaRules.create({
+  zone_id: zoneId,
+  mode: 'block',
+  configuration: {
+    target: 'ua',
+    value: 'BadBot'
+  },
+  description: 'Block BadBot crawler'
+});
+
+// List all firewall rules
+for await (const rule of client.firewall.rules.list({ zone_id: zoneId })) {
+  console.log(`Rule: ${rule.description}`);
+  console.log(`  Action: ${rule.action}`);
+  console.log(`  Paused: ${rule.paused}`);
+}
+```

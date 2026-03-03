@@ -1,0 +1,250 @@
+---
+title: Authentication
+description: Configure authentication for the Cloudflare TypeScript SDK
+---
+
+# Authentication
+
+The Cloudflare TypeScript SDK supports multiple authentication methods to access the Cloudflare API. Choose the method that best fits your use case.
+
+## API token (recommended)
+
+API tokens are the **preferred and most secure** way to authenticate with the Cloudflare API. Tokens can be scoped to specific permissions and resources.
+
+### Creating an API token
+
+<Steps>
+  <Step title="Access the Cloudflare Dashboard">
+    Visit the [Cloudflare Dashboard](https://dash.cloudflare.com/) and navigate to **My Profile** > **API Tokens**.
+  </Step>
+  
+  <Step title="Create a new token">
+    Click **Create Token** and either:
+    - Select a pre-configured template (recommended for common use cases)
+    - Create a custom token with specific permissions
+  </Step>
+  
+  <Step title="Configure permissions">
+    Select the permissions and resources your token needs access to. Follow the principle of least privilege.
+  </Step>
+  
+  <Step title="Save your token">
+    Copy the generated token immediately. You won't be able to view it again.
+  </Step>
+</Steps>
+
+[Learn more about creating API tokens](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
+
+### Using an API token
+
+Set the token using the `apiToken` option or the `CLOUDFLARE_API_TOKEN` environment variable:
+
+<CodeGroup>
+
+```typescript Constructor option
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: 'your_api_token_here',
+});
+```
+
+```typescript Environment variable
+// .env file
+CLOUDFLARE_API_TOKEN=your_api_token_here
+```
+
+```typescript Auto-loaded from environment
+import Cloudflare from 'cloudflare';
+
+// Automatically reads CLOUDFLARE_API_TOKEN from environment
+const client = new Cloudflare();
+```
+
+</CodeGroup>
+
+<Tip>
+  The SDK will automatically read the `CLOUDFLARE_API_TOKEN` environment variable if no `apiToken` is explicitly provided.
+</Tip>
+
+## API key + email (legacy)
+
+The API key and email combination is the previous authorization scheme. **When possible, use API tokens instead** for better security and granular permissions.
+
+### Finding your API key
+
+<Steps>
+  <Step title="Access your profile">
+    Go to **My Profile** > **API Tokens** in the Cloudflare Dashboard.
+  </Step>
+  
+  <Step title="View Global API Key">
+    Scroll to the **API Keys** section and click **View** next to Global API Key.
+  </Step>
+  
+  <Step title="Copy the key">
+    Enter your password to reveal and copy your Global API Key.
+  </Step>
+</Steps>
+
+### Using API key + email
+
+Provide both `apiKey` and `apiEmail` options, or use environment variables:
+
+<CodeGroup>
+
+```typescript Constructor options
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiKey: 'your_api_key_here',
+  apiEmail: 'your_email@example.com',
+});
+```
+
+```typescript Environment variables
+// .env file
+CLOUDFLARE_API_KEY=your_api_key_here
+CLOUDFLARE_EMAIL=your_email@example.com
+```
+
+```typescript Auto-loaded from environment
+import Cloudflare from 'cloudflare';
+
+// Automatically reads CLOUDFLARE_API_KEY and CLOUDFLARE_EMAIL
+const client = new Cloudflare();
+```
+
+</CodeGroup>
+
+<Warning>
+  Global API Keys have full access to your account. Use API tokens with scoped permissions whenever possible.
+</Warning>
+
+## User service key
+
+User service keys are used for specific API endpoints, such as the Origin CA certificates API. This is a specialized authentication method for certificate management.
+
+### Finding your user service key
+
+You can view or change your Origin CA key at:
+[https://developers.cloudflare.com/fundamentals/api/get-started/ca-keys/#viewchange-your-origin-ca-keys](https://developers.cloudflare.com/fundamentals/api/get-started/ca-keys/#viewchange-your-origin-ca-keys)
+
+### Using a user service key
+
+Provide the `userServiceKey` option or use the `CLOUDFLARE_API_USER_SERVICE_KEY` environment variable:
+
+<CodeGroup>
+
+```typescript Constructor option
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  userServiceKey: 'your_user_service_key_here',
+});
+```
+
+```typescript Environment variable
+// .env file
+CLOUDFLARE_API_USER_SERVICE_KEY=your_user_service_key_here
+```
+
+```typescript Auto-loaded from environment
+import Cloudflare from 'cloudflare';
+
+// Automatically reads CLOUDFLARE_API_USER_SERVICE_KEY
+const client = new Cloudflare();
+```
+
+</CodeGroup>
+
+## Authentication priority
+
+When multiple authentication methods are configured, the SDK uses them in this order:
+
+1. **API key + email**: If both `apiKey` and `apiEmail` are provided
+2. **API token**: If `apiToken` is provided
+3. **User service key**: If `userServiceKey` is provided
+
+The SDK will automatically include the appropriate headers based on the authentication method:
+
+- **API token**: `Authorization: Bearer <token>`
+- **API key + email**: `X-Auth-Key: <key>` and `X-Auth-Email: <email>`
+- **User service key**: `X-Auth-User-Service-Key: <key>`
+
+## Environment variables reference
+
+All supported environment variables for authentication:
+
+| Environment Variable | Description | Auth Method |
+|---------------------|-------------|-------------|
+| `CLOUDFLARE_API_TOKEN` | Your API token | API Token (recommended) |
+| `CLOUDFLARE_API_KEY` | Your Global API Key | API Key + Email (legacy) |
+| `CLOUDFLARE_EMAIL` | Your Cloudflare account email | API Key + Email (legacy) |
+| `CLOUDFLARE_API_USER_SERVICE_KEY` | Your user service key | User Service Key |
+
+## Security best practices
+
+<Steps>
+  <Step title="Use API tokens instead of API keys">
+    API tokens can be scoped to specific permissions and are more secure than Global API Keys.
+  </Step>
+  
+  <Step title="Never commit credentials to version control">
+    Always use environment variables or a secrets management system. Add `.env` to your `.gitignore`.
+  </Step>
+  
+  <Step title="Rotate credentials regularly">
+    Periodically rotate your API tokens and keys to minimize security risks.
+  </Step>
+  
+  <Step title="Use scoped permissions">
+    When creating API tokens, only grant the minimum permissions required for your use case.
+  </Step>
+  
+  <Step title="Monitor token usage">
+    Regularly review token usage in the Cloudflare Dashboard and revoke unused tokens.
+  </Step>
+</Steps>
+
+## Common errors
+
+### Authentication required
+
+If you see this error, ensure you've provided valid credentials:
+
+```
+Error: Could not resolve authentication method. Expected one of apiEmail, 
+apiKey, apiToken or userServiceKey to be set.
+```
+
+**Solution**: Provide at least one valid authentication method through constructor options or environment variables.
+
+### Invalid credentials
+
+If you receive a `401 AuthenticationError`, your credentials may be incorrect or expired:
+
+```typescript
+try {
+  const zones = await client.zones.list();
+} catch (err) {
+  if (err instanceof Cloudflare.AuthenticationError) {
+    console.error('Invalid credentials:', err.message);
+    // Check your API token/key and try again
+  }
+}
+```
+
+**Solution**: Verify your credentials are correct and haven't expired. Generate a new token if needed.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Make your first authenticated API call
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="https://developers.cloudflare.com/api">
+    Explore available API endpoints
+  </Card>
+</CardGroup>

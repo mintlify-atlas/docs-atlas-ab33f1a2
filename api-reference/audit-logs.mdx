@@ -1,0 +1,192 @@
+---
+title: Audit logs
+description: Retrieve and filter account audit logs
+---
+
+The Audit Logs API provides access to account-level audit logs, allowing you to track changes and actions performed on your Cloudflare account.
+
+## List audit logs
+
+Retrieve a list of audit logs for an account. You can filter by who made the change, which zone was affected, and the timeframe.
+
+```typescript
+for await (const log of client.auditLogs.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  since: '2024-01-01T00:00:00Z',
+  direction: 'desc'
+})) {
+  console.log(log.action?.type, log.actor?.email, log.when);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Account identifier
+</ParamField>
+
+<ParamField query="id" type="string">
+  Find a specific log by its ID
+</ParamField>
+
+<ParamField query="action" type="object">
+  Filter by action
+  <Expandable>
+    <ParamField query="type" type="string">
+      Filter by the action type (e.g., "create", "update", "delete")
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField query="actor" type="object">
+  Filter by actor who performed the action
+  <Expandable>
+    <ParamField query="email" type="string">
+      Filter by the email address of the actor that made the change
+    </ParamField>
+    <ParamField query="ip" type="string">
+      Filter by the IP address of the request that made the change (supports CIDR ranges)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField query="zone" type="object">
+  Filter by zone
+  <Expandable>
+    <ParamField query="name" type="string">
+      Filter by the name of the zone associated with the change
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField query="since" type="string">
+  Limits results to logs newer than the specified date (RFC3339 format)
+</ParamField>
+
+<ParamField query="before" type="string">
+  Limits results to logs older than the specified date (RFC3339 format)
+</ParamField>
+
+<ParamField query="direction" type="string">
+  Changes the direction of chronological sorting
+  
+  Options: `desc` | `asc`
+</ParamField>
+
+<ParamField query="page" type="number">
+  Page number for pagination
+</ParamField>
+
+<ParamField query="per_page" type="number">
+  Number of items per page (default: 25, max: 1000)
+</ParamField>
+
+<ParamField query="hide_user_logs" type="boolean">
+  Indicates whether to hide user level audit logs
+</ParamField>
+
+<ParamField query="export" type="boolean">
+  Indicates that this request is an export of logs in CSV format
+</ParamField>
+
+## Response fields
+
+<ResponseField name="id" type="string">
+  A string that uniquely identifies the audit log
+</ResponseField>
+
+<ResponseField name="when" type="string">
+  A UTC RFC3339 timestamp that specifies when the action occurred
+</ResponseField>
+
+<ResponseField name="action" type="object">
+  Information about the action performed
+  <Expandable>
+    <ResponseField name="type" type="string">
+      A short string describing the action performed
+    </ResponseField>
+    <ResponseField name="result" type="boolean">
+      Indicates if the action was successful
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="actor" type="object">
+  Information about who performed the action
+  <Expandable>
+    <ResponseField name="id" type="string">
+      The ID of the actor (e.g., User ID)
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      The email of the user that performed the action
+    </ResponseField>
+    <ResponseField name="ip" type="string">
+      The IP address of the request
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      The type of actor: `user`, `admin`, or `Cloudflare`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="resource" type="object">
+  Information about the resource that was affected
+  <Expandable>
+    <ResponseField name="id" type="string">
+      An identifier for the resource
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      The type of resource
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="owner" type="object">
+  The owner of the resource
+  <Expandable>
+    <ResponseField name="id" type="string">
+      Owner identifier
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="interface" type="string">
+  The source of the event (e.g., "API", "Dashboard")
+</ResponseField>
+
+<ResponseField name="metadata" type="unknown">
+  An object providing additional context to the action being logged. This is a flexible value that varies between actions
+</ResponseField>
+
+<ResponseField name="newValue" type="string">
+  The new value of the resource that was modified
+</ResponseField>
+
+<ResponseField name="oldValue" type="string">
+  The value of the resource before it was modified
+</ResponseField>
+
+## Example response
+
+```json
+{
+  "id": "f1234567-89ab-cdef-0123-456789abcdef",
+  "when": "2024-03-15T14:32:10Z",
+  "action": {
+    "type": "zone_setting_update",
+    "result": true
+  },
+  "actor": {
+    "id": "a1234567890bcdef1234567890abcdef",
+    "email": "user@example.com",
+    "ip": "192.0.2.1",
+    "type": "user"
+  },
+  "resource": {
+    "id": "023e105f4ecef8ad9ca31a8372d0c353",
+    "type": "zone"
+  },
+  "interface": "API",
+  "metadata": {
+    "zone_name": "example.com"
+  }
+}
+```

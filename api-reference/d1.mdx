@@ -1,0 +1,388 @@
+---
+title: D1 Database
+description: Manage serverless SQL databases with D1
+---
+
+Cloudflare D1 is a serverless SQL database built on SQLite. Use the API to create databases, execute queries, and manage data.
+
+## Overview
+
+Access the D1 API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access D1 resources
+const d1 = client.d1;
+```
+
+## Databases
+
+Manage D1 database instances.
+
+### Create a database
+
+Create a new D1 database.
+
+```typescript
+const database = await client.d1.database.create({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+  name: 'my-database',
+});
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Name for the database
+</ParamField>
+
+<ResponseField name="uuid" type="string">
+  The database UUID identifier
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The database name
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp when the database was created
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  The database version
+</ResponseField>
+
+<ResponseField name="file_size" type="number">
+  Database size in bytes
+</ResponseField>
+
+<ResponseField name="num_tables" type="number">
+  Number of tables in the database
+</ResponseField>
+
+### List databases
+
+Retrieve all D1 databases in your account.
+
+```typescript
+for await (const database of client.d1.database.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(database);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="name" type="string">
+  Filter by database name
+</ParamField>
+
+<ParamField path="page" type="number">
+  Page number for pagination
+</ParamField>
+
+<ParamField path="per_page" type="number">
+  Number of databases per page (default: 20, max: 100)
+</ParamField>
+
+### Get a database
+
+Retrieve details about a specific database.
+
+```typescript
+const database = await client.d1.database.get(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+### Update a database
+
+Update database configuration.
+
+```typescript
+const database = await client.d1.database.update(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    read_replication: {
+      mode: 'auto',
+    },
+  }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="read_replication" type="object">
+  Read replication configuration
+</ParamField>
+
+<ParamField path="read_replication.mode" type="string">
+  Replication mode: 'auto' or 'disabled'
+</ParamField>
+
+### Delete a database
+
+Delete a D1 database.
+
+```typescript
+await client.d1.database.delete(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID to delete
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+## Query
+
+Execute SQL queries against a D1 database.
+
+### Execute a query
+
+Run a SQL query against a database.
+
+```typescript
+const result = await client.d1.database.query(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    sql: 'SELECT * FROM users WHERE id = ?',
+    params: ['123'],
+  }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="sql" type="string" required>
+  The SQL query to execute
+</ParamField>
+
+<ParamField path="params" type="array">
+  Query parameters for prepared statements
+</ParamField>
+
+<ResponseField name="results" type="array">
+  Array of result rows
+</ResponseField>
+
+<ResponseField name="success" type="boolean">
+  Whether the query was successful
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Query metadata including rows affected and duration
+</ResponseField>
+
+### Execute raw SQL
+
+Execute raw SQL statements.
+
+```typescript
+const result = await client.d1.database.raw(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    sql: `
+      CREATE TABLE users (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE
+      );
+      INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');
+    `,
+  }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="sql" type="string" required>
+  Raw SQL statements to execute
+</ParamField>
+
+## Import and export
+
+### Export database
+
+Export a database as SQL.
+
+```typescript
+const exportUrl = await client.d1.database.export(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    output_format: 'polling',
+  }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="output_format" type="string">
+  Export format: 'polling' or 'download'
+</ParamField>
+
+<ResponseField name="url" type="string">
+  URL to download the exported SQL file
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Export status: 'pending', 'in_progress', or 'complete'
+</ResponseField>
+
+### Import SQL
+
+Import SQL into a database.
+
+```typescript
+const result = await client.d1.database.import(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    sql: sqlFileContent,
+  }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="sql" type="string" required>
+  SQL content to import
+</ParamField>
+
+## Time travel
+
+Restore a database to a previous point in time.
+
+### Get time travel bookmark
+
+Get a bookmark for restoring the database.
+
+```typescript
+const bookmark = await client.d1.database.timeTravel.getBookmark(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  { account_id: '023e105f4ecef8ad9ca31a8372d0c353' }
+);
+```
+
+### Restore database
+
+Restore a database to a specific bookmark.
+
+```typescript
+const result = await client.d1.database.timeTravel.restore(
+  'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    bookmark: 'bookmark-string',
+  }
+);
+```
+
+<ParamField path="database_id" type="string" required>
+  The database UUID
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="bookmark" type="string" required>
+  The bookmark to restore to
+</ParamField>
+
+## Using D1 in Workers
+
+Bind a D1 database to your Worker:
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    bindings: [
+      {
+        type: 'd1',
+        name: 'DB',
+        id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+      },
+    ],
+    modules: [...],
+  }
+);
+```
+
+Then query from your Worker:
+
+```typescript
+export default {
+  async fetch(request, env) {
+    const results = await env.DB.prepare(
+      'SELECT * FROM users WHERE id = ?'
+    )
+      .bind(123)
+      .all();
+    
+    return Response.json(results);
+  },
+};
+```

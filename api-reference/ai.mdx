@@ -1,0 +1,401 @@
+---
+title: Workers AI
+description: Run AI models on Cloudflare's global network
+---
+
+Workers AI provides access to AI models directly from Workers. Use the API to run inference on text, images, and embeddings.
+
+## Overview
+
+Access the Workers AI API:
+
+```typescript
+import Cloudflare from 'cloudflare';
+
+const client = new Cloudflare({
+  apiToken: process.env.CLOUDFLARE_API_TOKEN,
+});
+
+// Access AI resources
+const ai = client.ai;
+```
+
+## Run inference
+
+Execute AI models on-demand.
+
+### Text generation
+
+Generate text using large language models.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/meta/llama-2-7b-chat-int8',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    prompt: 'Tell me about Cloudflare Workers',
+  }
+);
+
+console.log(response.response);
+```
+
+<ParamField path="model_name" type="string" required>
+  The AI model identifier (e.g., '@cf/meta/llama-2-7b-chat-int8')
+</ParamField>
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ParamField path="prompt" type="string" required>
+  The input text prompt
+</ParamField>
+
+<ParamField path="max_tokens" type="number">
+  Maximum number of tokens to generate
+</ParamField>
+
+<ParamField path="temperature" type="number">
+  Controls randomness (0.0 to 1.0, higher = more random)
+</ParamField>
+
+<ParamField path="top_p" type="number">
+  Nucleus sampling parameter
+</ParamField>
+
+<ParamField path="top_k" type="number">
+  Top-k sampling parameter
+</ParamField>
+
+<ResponseField name="response" type="string">
+  The generated text response
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token usage statistics
+</ResponseField>
+
+<ResponseField name="usage.prompt_tokens" type="number">
+  Number of tokens in the prompt
+</ResponseField>
+
+<ResponseField name="usage.completion_tokens" type="number">
+  Number of tokens in the completion
+</ResponseField>
+
+<ResponseField name="usage.total_tokens" type="number">
+  Total number of tokens used
+</ResponseField>
+
+### Chat completion
+
+Generate chat responses using a messages format.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/meta/llama-2-7b-chat-int8',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    messages: [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: 'What is Workers AI?' },
+    ],
+  }
+);
+```
+
+<ParamField path="messages" type="array" required>
+  Array of message objects
+</ParamField>
+
+<ParamField path="messages.role" type="string" required>
+  Message role: 'system', 'user', or 'assistant'
+</ParamField>
+
+<ParamField path="messages.content" type="string" required>
+  Message content
+</ParamField>
+
+### Text embeddings
+
+Generate vector embeddings for text.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/baai/bge-base-en-v1.5',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    text: 'Cloudflare Workers AI is awesome',
+  }
+);
+
+console.log(response.data); // Array of embeddings
+```
+
+<ParamField path="model_name" type="string" required>
+  The embedding model (e.g., '@cf/baai/bge-base-en-v1.5')
+</ParamField>
+
+<ParamField path="text" type="string | array" required>
+  Text string or array of strings to embed
+</ParamField>
+
+<ResponseField name="data" type="array">
+  Array of embedding vectors
+</ResponseField>
+
+<ResponseField name="shape" type="array">
+  Shape of the embedding array [count, dimensions]
+</ResponseField>
+
+### Text classification
+
+Classify text into categories.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/huggingface/distilbert-sst-2-int8',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    text: 'This product is amazing!',
+  }
+);
+
+console.log(response); // [{ label: 'POSITIVE', score: 0.99 }]
+```
+
+<ResponseField name="label" type="string">
+  Classification label
+</ResponseField>
+
+<ResponseField name="score" type="number">
+  Confidence score (0-1)
+</ResponseField>
+
+### Translation
+
+Translate text between languages.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/meta/m2m100-1.2b',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    text: 'Hello, how are you?',
+    source_lang: 'en',
+    target_lang: 'es',
+  }
+);
+
+console.log(response.translated_text);
+```
+
+<ParamField path="text" type="string" required>
+  Text to translate
+</ParamField>
+
+<ParamField path="source_lang" type="string">
+  Source language code (e.g., 'en')
+</ParamField>
+
+<ParamField path="target_lang" type="string" required>
+  Target language code (e.g., 'es')
+</ParamField>
+
+### Summarization
+
+Summarize long text.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/facebook/bart-large-cnn',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    input_text: longArticleText,
+    max_length: 150,
+  }
+);
+
+console.log(response.summary);
+```
+
+<ParamField path="input_text" type="string" required>
+  Text to summarize
+</ParamField>
+
+<ParamField path="max_length" type="number">
+  Maximum summary length in tokens
+</ParamField>
+
+### Text-to-image
+
+Generate images from text descriptions.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    prompt: 'A sunset over mountains',
+  }
+);
+
+// Response is a binary image
+```
+
+<ParamField path="prompt" type="string" required>
+  Text description of the image to generate
+</ParamField>
+
+<ParamField path="negative_prompt" type="string">
+  Things to avoid in the image
+</ParamField>
+
+<ParamField path="num_steps" type="number">
+  Number of diffusion steps (higher = better quality, slower)
+</ParamField>
+
+<ParamField path="guidance" type="number">
+  How closely to follow the prompt (1-20)
+</ParamField>
+
+<ParamField path="width" type="number">
+  Image width in pixels
+</ParamField>
+
+<ParamField path="height" type="number">
+  Image height in pixels
+</ParamField>
+
+### Image classification
+
+Classify images into categories.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/microsoft/resnet-50',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    image: imageArray, // Array of pixel values
+  }
+);
+
+console.log(response); // [{ label: 'dog', score: 0.95 }]
+```
+
+<ParamField path="image" type="array" required>
+  Image data as array of integers (8-bit unsigned)
+</ParamField>
+
+### Automatic speech recognition
+
+Transcribe audio to text.
+
+```typescript
+const response = await client.ai.run(
+  '@cf/openai/whisper',
+  {
+    account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+    audio: audioArray,
+  }
+);
+
+console.log(response.text); // Transcribed text
+```
+
+<ParamField path="audio" type="array" required>
+  Audio data as array of integers
+</ParamField>
+
+<ParamField path="source_lang" type="string">
+  Source language of the audio
+</ParamField>
+
+<ResponseField name="text" type="string">
+  The transcribed text
+</ResponseField>
+
+<ResponseField name="word_count" type="number">
+  Number of words transcribed
+</ResponseField>
+
+## Models
+
+Browse and discover available AI models.
+
+### List models
+
+Retrieve all available AI models.
+
+```typescript
+for await (const model of client.ai.models.list({
+  account_id: '023e105f4ecef8ad9ca31a8372d0c353',
+})) {
+  console.log(model);
+}
+```
+
+<ParamField path="account_id" type="string" required>
+  Your Cloudflare account ID
+</ParamField>
+
+<ResponseField name="name" type="string">
+  Model identifier
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Model description
+</ResponseField>
+
+<ResponseField name="task" type="string">
+  Task type (e.g., 'text-generation', 'text-embeddings')
+</ResponseField>
+
+## Using Workers AI in Workers
+
+Bind Workers AI to your Worker:
+
+```typescript
+export default {
+  async fetch(request, env) {
+    const response = await env.AI.run(
+      '@cf/meta/llama-2-7b-chat-int8',
+      {
+        prompt: 'Tell me a joke',
+      }
+    );
+    
+    return Response.json(response);
+  },
+};
+```
+
+Configure the binding when deploying:
+
+```typescript
+const version = await client.workers.beta.workers.versions.create(
+  workerId,
+  {
+    account_id: accountId,
+    main_module: 'worker.mjs',
+    compatibility_date: '2024-03-01',
+    bindings: [
+      {
+        type: 'ai',
+        name: 'AI',
+      },
+    ],
+    modules: [...],
+  }
+);
+```
+
+## Best practices
+
+1. **Model selection**: Choose the right model for your task (size vs. performance)
+2. **Caching**: Cache embeddings and frequently used results
+3. **Rate limiting**: Implement rate limiting for user-facing applications
+4. **Error handling**: Handle model errors gracefully with fallbacks
+5. **Streaming**: Use streaming for long-running text generation
+6. **Context length**: Be mindful of model context limits
